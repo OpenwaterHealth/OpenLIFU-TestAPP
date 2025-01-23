@@ -24,117 +24,20 @@ ApplicationWindow {
         property int activeButtonIndex: 0 // Define activeButtonIndex here
 
         // Header Section (with drag functionality)
-        Rectangle {
-            height: 60 // Increased header size
-            color: "#1E1E20"
-            radius: 20
-            Layout.fillWidth: true
+        WindowMenu {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
 
-            MouseArea {
-                id: headerMouseArea
-                anchors.fill: parent
-                cursorShape: Qt.SizeAllCursor
-                onPressed: function(mouse) {
-                    if (mouse.button === Qt.LeftButton) {
-                        // Start the system move to allow dragging
-                        window.startSystemMove(); 
-                    }
-                }
-            }
-
-            // Left side: Logo and Title
-            RowLayout {
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 10
-                anchors.topMargin: 10
-                anchors.rightMargin: 15
-                anchors.bottomMargin: 10
-                anchors.leftMargin: 15
-
-                // Logo placeholder
-                Rectangle {
-                    width: 185
-                    height: 42
-                    color: "transparent" // No background color as we're using an image
-                    radius: 6
-
-                    Image {
-                        source: "assets/images/OpenwaterLogo.png" // Path to your logo
-                        anchors.fill: parent // Scale the image to fit the rectangle
-                        fillMode: Image.PreserveAspectFit // Ensure the aspect ratio is maintained
-                        smooth: true // Enable smoothing for better quality
-                    }
-                }
-            }
-
-            RowLayout {
-                anchors.top: parent.top
-                anchors.topMargin: 2
-
-                anchors.centerIn: parent // Center the RowLayout in the parent
-
-                // Application title
-                Text {
-                    text: "Open-LIFU Engineering App"
-                    color: "white"
-                    font.pixelSize: 24
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignLeft
-                }
-            }
-
-            // Minimize, Maximize, Exit Buttons
-            RowLayout {
-                anchors.top: parent.top
-                anchors.right: parent.right
-                spacing: 10
-                anchors.topMargin: 10
-                anchors.rightMargin: 15
-                anchors.bottomMargin: 10
-                anchors.leftMargin: 15
-
-
-                // Minimize Button
-                IconWindowButton {
-                    buttonIcon: "\ue9e4" // Minimize icon
-                    Layout.alignment: Qt.AlignHCenter
-                    onClicked: {
-                        window.showMinimized()
-                    }
-                }
-
-                // Maximize Button
-                IconWindowButton {
-                    buttonIcon: "\ueb18" // Maximize icon
-                    Layout.alignment: Qt.AlignHCenter
-                    onClicked: {
-                        if (Window.visibility == Window.Maximized) {
-                            window.showNormal(); // Restore to normal size
-                        } else {
-                            window.showMaximized(); // Maximize the window
-                        }                     
-                    }
-                }
-
-                // Exit Button
-                IconWindowButton {
-                    buttonIcon: "\ue9b3" // Exit (close) icon
-                    Layout.alignment: Qt.AlignHCenter
-                    onClicked: {
-                        Qt.quit(); // Close the application
-                    }
-                }
-            }
+            // Set title and logo dynamically
+            titleText: "Open-LIFU Engineering App"
+            logoSource: "../assets/images/OpenwaterLogo.png" // Correct relative path
         }
 
         // Layout for Sidebar and Main Content
         RowLayout {
             anchors.fill: parent
-            anchors.topMargin: 60
+            anchors.topMargin: 65
             anchors.rightMargin: 15
             anchors.bottomMargin: 15
             anchors.leftMargin: 15

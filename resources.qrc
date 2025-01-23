@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <!-- Fonts -->
+        <file alias="fonts/keenicons-outline.svg">assets/fonts/keenicons-outline.svg</file>
+        <file alias="fonts/keenicons-outline.ttf">assets/fonts/keenicons-outline.ttf</file>
+        <file alias="fonts/keenicons-outline.woff">assets/fonts/keenicons-outline.woff</file>
+
+        <!-- Images -->
+        <file alias="images/favicon.png">assets/images/favicon.png</file>
+        <file alias="images/OpenwaterLogo.png">assets/images/OpenwaterLogo.png</file>
+    </qresource>
+</RCC>
