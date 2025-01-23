@@ -5,12 +5,12 @@ import QtQuick.Layouts 6.0
 import "components"
 import "pages"
 
-ApplicationWindow {
-    id: root
+Window {
+    id: window
     visible: true
     width: 1200
     height: 800
-    flags: Qt.FramelessWindowHint | Qt.Window // Ensure it appears in the taskbar
+    flags: Qt.FramelessWindowHint | Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint // Ensure it appears in the taskbar
     color: "transparent" // Make the window background transparent to apply rounded corners
 
     Rectangle {
@@ -39,7 +39,7 @@ ApplicationWindow {
                 onPressed: function(mouse) {
                     if (mouse.button === Qt.LeftButton) {
                         // Start the system move to allow dragging
-                        root.startSystemMove(); // Use the root object explicitly
+                        window.startSystemMove(); 
                     }
                 }
             }
@@ -94,7 +94,7 @@ ApplicationWindow {
                     buttonIcon: "\ue9e4" // Minimize icon
                     Layout.alignment: Qt.AlignHCenter
                     onClicked: {
-
+                        window.showMinimized()
                     }
                 }
 
@@ -103,7 +103,12 @@ ApplicationWindow {
                     buttonIcon: "\ueb18" // Maximize icon
                     Layout.alignment: Qt.AlignHCenter
                     onClicked: {
-                        
+                        if (Window.visibility == Window.Maximized) {
+                            window.showNormal(); // Restore to normal size
+                        } else {
+                            console.log("max")
+                            window.showMaximized(); // Maximize the window
+                        }                     
                     }
                 }
 
