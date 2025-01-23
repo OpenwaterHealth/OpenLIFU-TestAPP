@@ -1,9 +1,11 @@
 import sys
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 
 def main():
     app = QGuiApplication(sys.argv)
+    # Set the global application icon
+    app.setWindowIcon(QIcon("assets/images/favicon.png"))
     engine = QQmlApplicationEngine()
 
     # Load the QML file

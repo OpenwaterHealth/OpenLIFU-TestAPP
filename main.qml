@@ -5,13 +5,14 @@ import QtQuick.Layouts 6.0
 import "components"
 import "pages"
 
-Window {
+ApplicationWindow {
     id: window
     visible: true
     width: 1200
     height: 800
     flags: Qt.FramelessWindowHint | Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint // Ensure it appears in the taskbar
     color: "transparent" // Make the window background transparent to apply rounded corners
+    //icon: "assets/images/favicon.png" // Set the application icon
 
     Rectangle {
         anchors.fill: parent
@@ -56,23 +57,31 @@ Window {
 
                 // Logo placeholder
                 Rectangle {
-                    width: 32
-                    height: 32
-                    color: "#3E4E6F"
+                    width: 185
+                    height: 42
+                    color: "transparent" // No background color as we're using an image
                     radius: 6
-                    Text {
-                        text: "L" // Placeholder for logo text
-                        color: "white"
-                        font.pixelSize: 16
-                        anchors.centerIn: parent
+
+                    Image {
+                        source: "assets/images/OpenwaterLogo.png" // Path to your logo
+                        anchors.fill: parent // Scale the image to fit the rectangle
+                        fillMode: Image.PreserveAspectFit // Ensure the aspect ratio is maintained
+                        smooth: true // Enable smoothing for better quality
                     }
                 }
+            }
+
+            RowLayout {
+                anchors.top: parent.top
+                anchors.topMargin: 2
+
+                anchors.centerIn: parent // Center the RowLayout in the parent
 
                 // Application title
                 Text {
-                    text: "OpenLIFU Engineering App"
+                    text: "Open-LIFU Engineering App"
                     color: "white"
-                    font.pixelSize: 18
+                    font.pixelSize: 24
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignLeft
                 }
@@ -106,7 +115,6 @@ Window {
                         if (Window.visibility == Window.Maximized) {
                             window.showNormal(); // Restore to normal size
                         } else {
-                            console.log("max")
                             window.showMaximized(); // Maximize the window
                         }                     
                     }
