@@ -6,7 +6,7 @@ This Embed resources and ensures that assets are packaged with the application s
 ### Steps to Compile and Use
 1. Compile the QRC File: Run the following command to generate the Python resource file
     ```bash
-    pyrcc6 -o resources_rc.py resources.qrc
+    pyside6-rcc -o resources_rc.py resources.qrc
     ```
 2. Import the Generated Resource File: Add this to the top of your main.py
     ```bash

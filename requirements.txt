@@ -1,0 +1,8 @@
+PyQt6==6.8.0
+PyQt6-sip==13.9.1
+PyQt6-Qt6==6.8.1
+PySide6==6.8.1
+
+# Optional tools for development and testing
+pytest==7.4.0
+flake8==7.1.1
