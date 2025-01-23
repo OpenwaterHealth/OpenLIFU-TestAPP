@@ -57,11 +57,11 @@ Item {
     // Tooltip
     Rectangle {
         id: tooltip
-        width: 120
+        width: 80
         height: 30
-        color: "white"
+        color: "#1C1C1E"
         radius: 4
-        border.color: "#E0E0E0"
+        border.color: "transparent"
         opacity: mouseArea.containsMouse ? 1.0 : 0.0
         visible: mouseArea.containsMouse
         z: 10
@@ -69,15 +69,15 @@ Item {
         Text {
             text: buttonText
             font.pixelSize: 14
-            color: "#2C3E50"
+            color: "white"
             anchors.centerIn: parent
         }
 
-        // Position the tooltip to the right of the button
+        // Position the tooltip above the button
         anchors {
-            left: background.right
-            leftMargin: 10
-            verticalCenter: background.verticalCenter
+            bottom: background.top
+            bottomMargin: 5 // Add a small gap between the button and the tooltip
+            horizontalCenter: background.horizontalCenter
         }
     }
 

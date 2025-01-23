@@ -12,7 +12,14 @@ Rectangle {
     // Current active button index
     property int activeButtonIndex: 0
 
+    // Signal to handle button clicks
     signal buttonClicked(int index)
+
+    // Reusable function for button handling
+    function handleButtonClick(index) {
+        activeButtonIndex = index;
+        buttonClicked(index);
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -27,8 +34,7 @@ Rectangle {
             backgroundColor: sidebarMenu.activeButtonIndex === 0 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 0 ? "#2C3E50" : "#BDC3C7"
             onClicked: {
-                sidebarMenu.activeButtonIndex = 0
-                sidebarMenu.buttonClicked(0)
+                sidebarMenu.handleButtonClick(0); // Call the global function
             }
         }
 
@@ -40,21 +46,19 @@ Rectangle {
             backgroundColor: sidebarMenu.activeButtonIndex === 1 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 1 ? "#2C3E50" : "#BDC3C7"
             onClicked: {
-                sidebarMenu.activeButtonIndex = 1
-                sidebarMenu.buttonClicked(1)
+                sidebarMenu.handleButtonClick(1); // Call the global function
             }
         }
 
         // Console Button
         IconButton {
-            buttonIcon: "\uea51"
+            buttonIcon: "\ueaae"
             buttonText: "Console"
             Layout.alignment: Qt.AlignHCenter
             backgroundColor: sidebarMenu.activeButtonIndex === 2 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 2 ? "#2C3E50" : "#BDC3C7"
             onClicked: {
-                sidebarMenu.activeButtonIndex = 2
-                sidebarMenu.buttonClicked(2)
+                sidebarMenu.handleButtonClick(2); // Call the global function
             }
         }
 
@@ -66,8 +70,7 @@ Rectangle {
             backgroundColor: sidebarMenu.activeButtonIndex === 3 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 3 ? "#2C3E50" : "#BDC3C7"
             onClicked: {
-                sidebarMenu.activeButtonIndex = 3
-                sidebarMenu.buttonClicked(3)
+                sidebarMenu.handleButtonClick(3); // Call the global function
             }
         }
     }

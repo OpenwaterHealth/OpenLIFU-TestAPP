@@ -12,7 +12,9 @@ ApplicationWindow {
     height: 800
     flags: Qt.FramelessWindowHint | Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint // Ensure it appears in the taskbar
     color: "transparent" // Make the window background transparent to apply rounded corners
-    //icon: "assets/images/favicon.png" // Set the application icon
+
+    // State to track which content to show
+    property int activeMenu: 0
 
     Rectangle {
         anchors.fill: parent
@@ -44,53 +46,40 @@ ApplicationWindow {
             spacing: 20
             Layout.fillHeight: true
 
-            // Sidebar
-            Rectangle {
-                width: 80
-                color: "#2C2C2E"
-                radius: 10
+            // Sidebar Menu
+            SidebarMenu {
+                Layout.alignment: Qt.AlignLeft
                 Layout.fillHeight: true
+                color: "#1C1C1E" // Dark sidebar background
 
-                // Sidebar
-                ColumnLayout {
-                    Layout.fillHeight: true
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: 10
-
-                    // Demo Button
-                    IconButton {
-                        buttonIcon: "\ueb34" // Demo icon
-                        buttonText: "Demo"
-                        Layout.alignment: Qt.AlignHCenter
-                        onClicked: {
-                            console.log("Demo clicked");
-                        }
-                    }
-
+                // Explicitly pass the signal parameter to the function
+                onButtonClicked: {
+                    handleSidebarClick(arguments[0]);
                 }
             }
-
+            
             // Main Content
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 spacing: 20
 
-                RowLayout {
+                Loader {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 20
+                    source: activeMenu === 0 ? "pages/Demo.qml"
+                        : activeMenu === 1 ? "pages/Test.qml"
+                        : activeMenu === 2 ? "pages/Console.qml"
+                        : "pages/Settings.qml"
 
-                    // Left Panel (Navigation/Map)
-                    Rectangle {
-                        color: "#29292B"
-                        radius: 20
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        opacity: 0.9
-                    }
                 }
             }
         }
+    }
+
+    // JavaScript function to handle sidebar button clicks
+    function handleSidebarClick(index) {
+        activeMenu = index; // Update the activeMenu property
+        console.log("Button clicked with index:", index);
     }
 }
