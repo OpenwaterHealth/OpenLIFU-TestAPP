@@ -158,7 +158,8 @@ Rectangle {
                     anchors.fill: parent
                     anchors.margins: 10
                     fillMode: Image.PreserveAspectFit
-                    source: ""
+                    source: "../assets/images/empty_graph.png"
+
 
                     function updateImage(base64data) {
                         if (base64data.startsWith("data:image/png;base64,")) {
