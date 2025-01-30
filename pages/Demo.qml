@@ -1,6 +1,7 @@
 import QtQuick 6.0
 import QtQuick.Controls 6.0
 import QtQuick.Layouts 6.0
+import QtQuick.Dialogs
 
 Rectangle {
     id: demoPage
@@ -112,6 +113,10 @@ Rectangle {
                             console.log("Frequency:", frequencyInput.text);
                             console.log("Cycles:", cyclesInput.text);
                             console.log("Trigger:", triggerInput.text);
+                            UltrasoundController.generate_plot(
+                                xInput.text, yInput.text, zInput.text,
+                                frequencyInput.text, cyclesInput.text, triggerInput.text
+                            );
                         }
                     }
 
@@ -176,9 +181,48 @@ Rectangle {
 
             // Right bottom: Status panel
             Rectangle {
+                id: solutionPanel
+                width: 500
+                height: 150
+                color: "#252525"
+                radius: 10
+                border.color: "#3E4E6F"
+                border.width: 2
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 10
+
+                    Text {
+                        text: "Solution File Upload"
+                        font.pixelSize: 16
+                        color: "#BDC3C7"
+                        horizontalAlignment: Text.AlignHCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    FileDialog {
+                        id: fileDialog
+                        title: "Select a Solution File"
+                        nameFilters: ["Documents (*.pdf *.docx *.txt)"]
+                        onAccepted: {
+                            console.log("File selected: " + fileDialog.file)
+                        }
+                    }
+
+                    Button {
+                        text: "Upload File"
+                        onClicked: fileDialog.open()
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+            }
+
+            // Right bottom: Status panel
+            Rectangle {
                 id: statusPanel
                 width: 500
-                height: 300
+                height: 130
                 color: "#252525"
                 radius: 10
                 border.color: "#3E4E6F"
