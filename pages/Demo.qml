@@ -7,7 +7,7 @@ Rectangle {
     id: demoPage
     width: parent.width
     height: parent.height
-    color: "#29292B" // Background color
+    color: "#29292B"
     radius: 20
     opacity: 0.95
 
@@ -21,7 +21,7 @@ Rectangle {
             top: parent.top
             left: parent.left
             right: parent.right
-            topMargin: 10 // Added 10px more margin from the top
+            topMargin: 10
         }
     }
 
@@ -30,7 +30,6 @@ Rectangle {
         anchors.margins: 20
         spacing: 20
 
-        // Left side: User input and controls
         Rectangle {
             id: inputContainer
             width: 500
@@ -45,15 +44,9 @@ Rectangle {
                 anchors.margins: 20
                 spacing: 15
 
-                // Beam Focus Section
                 GroupBox {
                     title: "Beam Focus"
                     Layout.fillWidth: true
-                    label: Text {
-                        text: "Beam Focus"
-                        color: "white"
-                        font.bold: true
-                    }
 
                     GridLayout {
                         columns: 2
@@ -70,34 +63,25 @@ Rectangle {
                     }
                 }
 
-                // Pulse Profile Section
                 GroupBox {
                     title: "Pulse Profile"
                     Layout.fillWidth: true
-                    label: Text {
-                        text: "Pulse Profile"
-                        color: "white"
-                        font.bold: true
-                    }
 
                     GridLayout {
                         columns: 2
                         width: parent.width
 
                         Text { text: "Frequency (Hz):"; color: "white" }
-                        TextField { id: frequencyInput; text: "400e3" }
+                        TextField { id: frequencyInput; text: "1000000" }
 
                         Text { text: "Cycles:"; color: "white" }
                         TextField { id: cyclesInput; text: "5" }
 
-                        Text { text: "Trigger(Hz):"; color: "white" }
+                        Text { text: "Trigger (Hz):"; color: "white" }
                         TextField { id: triggerInput; text: "10" }
                     }
                 }
 
-
-
-                // Control Buttons Section
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 10
@@ -115,7 +99,8 @@ Rectangle {
                             console.log("Trigger:", triggerInput.text);
                             UltrasoundController.generate_plot(
                                 xInput.text, yInput.text, zInput.text,
-                                frequencyInput.text, cyclesInput.text, triggerInput.text
+                                frequencyInput.text, cyclesInput.text, triggerInput.text,
+                                "buffer"
                             );
                         }
                     }
@@ -159,7 +144,6 @@ Rectangle {
         ColumnLayout {
             spacing: 20
 
-            // Right top: Graph display
             Rectangle {
                 id: graphContainer
                 width: 500
@@ -174,12 +158,18 @@ Rectangle {
                     anchors.fill: parent
                     anchors.margins: 10
                     fillMode: Image.PreserveAspectFit
-                    source: "../assets/images/ex_plot.png"
+                    source: ""
+
+                    function updateImage(base64data) {
+                        if (base64data.startsWith("data:image/png;base64,")) {
+                            source = base64data;
+                        } else {
+                            source = base64data;
+                        }
+                    }
                 }
-
             }
-
-            // Right bottom: Status panel
+            
             Rectangle {
                 id: solutionPanel
                 width: 500
@@ -218,7 +208,6 @@ Rectangle {
                 }
             }
 
-            // Right bottom: Status panel
             Rectangle {
                 id: statusPanel
                 width: 500
@@ -229,12 +218,22 @@ Rectangle {
                 border.width: 2
 
                 Text {
+                    id: statusText
                     text: "Status: Ready"
                     font.pixelSize: 16
                     color: "#BDC3C7"
                     anchors.centerIn: parent
                 }
             }
+        }
+    }
+
+    Connections {
+        target: UltrasoundController
+        function onPlotGenerated(imageData) {
+            console.log("Received image data for display.");
+            ultrasoundGraph.updateImage("data:image/png;base64," + imageData);
+            statusText.text = "Status: Plot updated!";
         }
     }
 }

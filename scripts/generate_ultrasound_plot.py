@@ -7,6 +7,10 @@ import time
 import base64
 from io import BytesIO
 
+# ✅ Fix: Set the non-GUI backend before using matplotlib
+import matplotlib
+matplotlib.use("Agg")  # Prevents QWidget errors
+
 def generate_ultrasound_plot(x_focus, y_focus, z_focus, frequency, cycles, trigger, mode="file"):
     try:
         # Convert input values
