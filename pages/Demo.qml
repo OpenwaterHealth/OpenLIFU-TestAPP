@@ -3,63 +3,192 @@ import QtQuick.Controls 6.0
 import QtQuick.Layouts 6.0
 
 Rectangle {
-    id: page1
+    id: demoPage
     width: parent.width
     height: parent.height
-    color: "#29292B" // Background color for Page 1
+    color: "#29292B" // Background color
     radius: 20
-    opacity: 0.95 // Slight transparency for the content area
+    opacity: 0.95
 
-    ColumnLayout {
+    Text {
+        text: "Focused Ultrasound Demo"
+        font.pixelSize: 18
+        font.weight: Font.Bold
+        color: "white"
+        horizontalAlignment: Text.AlignHCenter
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            topMargin: 10 // Added 10px more margin from the top
+        }
+    }
+
+    RowLayout {
         anchors.fill: parent
         anchors.margins: 20
-        spacing: 15
+        spacing: 20
 
-        // Title
-        Text {
-            text: "Demo"
-            font.pixelSize: 24
-            font.weight: Font.Bold
-            color: "white"
-            horizontalAlignment: Text.AlignHCenter
-            Layout.alignment: Qt.AlignHCenter
-        }
-
-        // Content Section
+        // Left side: User input and controls
         Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+            id: inputContainer
+            width: 500
+            height: 620
             color: "#1E1E20"
             radius: 10
             border.color: "#3E4E6F"
             border.width: 2
 
-            Text {
-                text: "Demo"
-                font.pixelSize: 16
-                color: "#BDC3C7"
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                anchors.centerIn: parent
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 15
+
+                // Beam Focus Section
+                GroupBox {
+                    title: "Beam Focus"
+                    Layout.fillWidth: true
+                    label: Text {
+                        text: "Beam Focus"
+                        color: "white"
+                        font.bold: true
+                    }
+
+                    GridLayout {
+                        columns: 2
+                        width: parent.width
+
+                        Text { text: "Left (X):"; color: "white" }
+                        TextField { id: xInput; text: "0" }
+
+                        Text { text: "Front (Y):"; color: "white" }
+                        TextField { id: yInput; text: "0" }
+
+                        Text { text: "Down (Z):"; color: "white" }
+                        TextField { id: zInput; text: "50" }
+                    }
+                }
+
+                // Pulse Profile Section
+                GroupBox {
+                    title: "Pulse Profile"
+                    Layout.fillWidth: true
+                    label: Text {
+                        text: "Pulse Profile"
+                        color: "white"
+                        font.bold: true
+                    }
+
+                    GridLayout {
+                        columns: 2
+                        width: parent.width
+
+                        Text { text: "Frequency (Hz):"; color: "white" }
+                        TextField { id: frequencyInput; text: "400e3" }
+
+                        Text { text: "Cycles:"; color: "white" }
+                        TextField { id: cyclesInput; text: "5" }
+
+                        Text { text: "Trigger(Hz):"; color: "white" }
+                        TextField { id: triggerInput; text: "10" }
+                    }
+                }
+
+
+
+                // Control Buttons Section
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Button {
+                        text: "Configure"
+                        Layout.fillWidth: true
+                        onClicked: {
+                            console.log("Configuring beam with parameters:");
+                            console.log("X:", xInput.text);
+                            console.log("Y:", yInput.text);
+                            console.log("Z:", zInput.text);
+                            console.log("Frequency:", frequencyInput.text);
+                            console.log("Cycles:", cyclesInput.text);
+                            console.log("Trigger:", triggerInput.text);
+                        }
+                    }
+
+                    Button {
+                        text: "Start"
+                        Layout.fillWidth: true
+                        enabled: false  // This disables the button
+                        onClicked: {
+                            console.log("Starting beam...");
+                        }
+                    }
+
+                    Button {
+                        text: "Stop"
+                        Layout.fillWidth: true
+                        enabled: false  // This disables the button
+                        onClicked: {
+                            console.log("Stopping beam...");
+                        }
+                    }
+
+                    Button {
+                        text: "Reset"
+                        Layout.fillWidth: true
+                        enabled: false  // This disables the button
+                        onClicked: {
+                            console.log("Resetting parameters...");
+                            xInput.text = "0";
+                            yInput.text = "0";
+                            zInput.text = "50";
+                            frequencyInput.text = "1000000";
+                            cyclesInput.text = "5";
+                            triggerInput.text = "0";
+                        }
+                    }
+                }
             }
         }
 
-        // Buttons or Actions
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
+        ColumnLayout {
             spacing: 20
 
-            Button {
-                text: "Action 1"
-                onClicked: {
-                    console.log("Action 1 clicked");
+            // Right top: Graph display
+            Rectangle {
+                id: graphContainer
+                width: 500
+                height: 300
+                color: "#1E1E20"
+                radius: 10
+                border.color: "#3E4E6F"
+                border.width: 2
+
+                Image {
+                    id: ultrasoundGraph
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    fillMode: Image.PreserveAspectFit
+                    source: "../assets/images/ex_plot.png"
                 }
+
             }
 
-            Button {
-                text: "Action 2"
-                onClicked: {
-                    console.log("Action 2 clicked");
+            // Right bottom: Status panel
+            Rectangle {
+                id: statusPanel
+                width: 500
+                height: 300
+                color: "#252525"
+                radius: 10
+                border.color: "#3E4E6F"
+                border.width: 2
+
+                Text {
+                    text: "Status: Ready"
+                    font.pixelSize: 16
+                    color: "#BDC3C7"
+                    anchors.centerIn: parent
                 }
             }
         }

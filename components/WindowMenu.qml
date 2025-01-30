@@ -79,7 +79,7 @@ Rectangle {
                     window.showMinimized(); // Minimize the window
                 }
             }
-
+/*
             // Maximize/Restore Button
             IconWindowButton {
                 buttonIcon: "\ueb18" // Maximize/restore icon
@@ -92,7 +92,7 @@ Rectangle {
                     }
                 }
             }
-
+*/
             // Exit Button
             IconWindowButton {
                 buttonIcon: "\ue9b3" // Exit (close) icon

@@ -1,3 +1,5 @@
+// Copyright (C) 2021 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 import QtQuick 6.0
 import QtQuick.Controls 6.0
 import QtQuick.Layouts 6.0
@@ -5,7 +7,9 @@ import QtQuick.Layouts 6.0
 import "components"
 import "pages"
 
-ApplicationWindow {
+
+Window {
+
     id: window
     visible: true
     width: 1200
@@ -57,7 +61,7 @@ ApplicationWindow {
                     handleSidebarClick(arguments[0]);
                 }
             }
-            
+
             // Main Content
             ColumnLayout {
                 Layout.fillWidth: true
@@ -82,4 +86,5 @@ ApplicationWindow {
         activeMenu = index; // Update the activeMenu property
         console.log("Button clicked with index:", index);
     }
+
 }

@@ -1,17 +1,18 @@
 import sys
+import os
 from PyQt6.QtGui import QGuiApplication, QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 
 def main():
-    app = QGuiApplication(sys.argv)
-    # Set the global application icon
-    app.setWindowIcon(QIcon("assets/images/favicon.png"))
-    engine = QQmlApplicationEngine()
+    os.environ["QT_QUICK_CONTROLS_STYLE"] = "Material"  # Forces Material Design
+    os.environ["QT_QUICK_CONTROLS_MATERIAL_THEME"] = "Dark"
 
-    # Load the QML file
+    app = QGuiApplication(sys.argv)
+    app.setWindowIcon(QIcon("assets/images/favicon.png"))
+
+    engine = QQmlApplicationEngine()
     engine.load("main.qml")
 
-    # Exit the application if QML fails to load
     if not engine.rootObjects():
         print("Error: Failed to load QML file")
         sys.exit(-1)
