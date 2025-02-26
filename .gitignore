@@ -82,3 +82,5 @@ junit/
 
 # macOS specific
 *.DS_Store
+
+local_notes.md

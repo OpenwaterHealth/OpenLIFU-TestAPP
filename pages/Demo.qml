@@ -218,12 +218,67 @@ Rectangle {
                 border.color: "#3E4E6F"
                 border.width: 2
 
-                Text {
-                    id: statusText
-                    text: "Status: Ready"
-                    font.pixelSize: 16
-                    color: "#BDC3C7"
+                Column {
                     anchors.centerIn: parent
+                    spacing: 10
+
+                    // Connection status text
+                    Text {
+                        id: statusText
+                        text: "Status: Ready"
+                        font.pixelSize: 16
+                        color: "#BDC3C7"
+                        horizontalAlignment: Text.AlignHCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // LED indicators for TX and HV
+                    RowLayout {
+                        spacing: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        // TX LED
+                        RowLayout {
+                            spacing: 5
+                            // LED circle
+                            Rectangle {
+                                width: 20
+                                height: 20
+                                radius: 10
+                                color: UltrasoundController ? (UltrasoundController.txConnected ? "green" : "red") : "red"    
+                                border.color: "black"
+                                border.width: 1
+                            }
+                            // Label for TX
+                            Text {
+                                text: "TX"
+                                font.pixelSize: 16
+                                color: "#BDC3C7"
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        // HV LED
+                        RowLayout {
+                            spacing: 5
+                            // LED circle
+                            Rectangle {
+                                width: 20
+                                height: 20
+                                radius: 10
+                                color: UltrasoundController ? (UltrasoundController.hvConnected ? "green" : "red") : "red"    
+                                border.color: "black"
+                                border.width: 1
+                            }
+                            // Label for HV
+                            Text {
+                                text: "HV"
+                                font.pixelSize: 16
+                                color: "#BDC3C7"
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                    }
                 }
             }
         }
