@@ -1,7 +1,12 @@
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 import logging
+import numpy as np
 from scripts.generate_ultrasound_plot import generate_ultrasound_plot  # Import the function directly
 from openlifu.io.LIFUInterface import LIFUInterface
+from openlifu.bf.pulse import Pulse
+from openlifu.bf.sequence import Sequence
+from openlifu.geo import Point
+from openlifu.plan.solution import Solution
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +139,44 @@ class LIFUConnector(QObject):
     def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ):
         """Simulate configuring the transmitter."""
         if self._txConnected:
+            json_trigger_data = {
+                "TriggerFrequencyHz": triggerHZ,
+                "TriggerMode": 1,
+                "TriggerPulseCount": 0,
+                "TriggerPulseWidthUsec": 20000
+            }
+            trigger_setting = self.interface.txdevice.set_trigger_json(data=json_trigger_data)
+            if trigger_setting:
+                print(f"Trigger Setting: {trigger_setting}")
+            else:
+                print("Failed to set trigger setting.")
+            tx_chip_count = self.interface.txdevice.enum_tx7332_devices()
+            logger.debug(f'TX CHIP COUNT: {tx_chip_count}')
+            pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=2e-5)
+            pt = Point(position=(int(xInput),int(yInput),int(zInput)), units="mm")
+            sequence = Sequence(
+                pulse_interval=0.1,
+                pulse_count=10,
+                pulse_train_interval=1,
+                pulse_train_count=1
+            )
+
+            solution = Solution(
+                id="solution",
+                name="Solution",
+                protocol_id="example_protocol",
+                transducer_id="example_transducer",
+                delays = np.zeros((1,64)),
+                apodizations = np.ones((1,64)),
+                pulse = pulse,
+                sequence = sequence,
+                target=pt,
+                foci=[pt],
+                approved=True
+            )
+            
+            self.interface.set_solution(solution)
+
             self._configured = True
             self.update_state()
             logger.info("Transmitter configured")
@@ -149,7 +192,10 @@ class LIFUConnector(QObject):
     def start_sonication(self):
         """Start the beam, transitioning to RUNNING state."""
         if self._state == READY:
-            self._state = RUNNING
+            if self.interface.txdevice.start_trigger():
+                self._state = RUNNING
+            else:
+                logger.info("Failed to start trigger")
             self.stateChanged.emit()
             logger.info("Sonication started")
 
@@ -157,7 +203,10 @@ class LIFUConnector(QObject):
     def stop_sonication(self):
         """Stop the beam and return to READY state."""
         if self._state == RUNNING:
-            self._state = READY
+            if self.interface.txdevice.stop_trigger():
+                self._state = READY
+            else:
+                logger.info("Failed to stop trigger")
             self.stateChanged.emit()
             logger.info("Sonication stopped")
 
