@@ -1,62 +1,193 @@
-import asyncio
+from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 import logging
-from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
+from scripts.generate_ultrasound_plot import generate_ultrasound_plot  # Import the function directly
 from openlifu.io.LIFUInterface import LIFUInterface
 
 logger = logging.getLogger(__name__)
 
-class LIFUConnector(QObject):
-    signal_connected = pyqtSignal(str)  # Emitted when device connects
-    signal_disconnected = pyqtSignal()  # Emitted when device disconnects
-    signal_data_received = pyqtSignal(str)  # Emitted when data is received
+# Define system states
+DISCONNECTED = 0
+TX_CONNECTED = 1
+CONFIGURED = 2
+READY = 3
+RUNNING = 4
 
-    def __init__(self, ultrasound_controller):
+class LIFUConnector(QObject):
+    # Ensure signals are correctly defined
+    signalConnected = pyqtSignal(str, str)  # (descriptor, port)
+    signalDisconnected = pyqtSignal(str, str)  # (descriptor, port)
+    signalDataReceived = pyqtSignal(str, str)  # (descriptor, data)
+    plotGenerated = pyqtSignal(str)  # Signal to notify QML when a new plot is ready
+    solutionConfigured = pyqtSignal(str)  # Signal for solution configuration feedback
+
+    stateChanged = pyqtSignal()  # Notifies QML when state changes
+    connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
+
+    def __init__(self):
         super().__init__()
         self.interface = LIFUInterface(run_async=True)
-        self.treatment_running = False
-        self.connected_status = False  
-        self.ultrasound_controller = ultrasound_controller  # Store reference to update UI
+        self._txConnected = False
+        self._hvConnected = False
+        self._configured = False
+        self._state = DISCONNECTED
 
         self.connect_signals()
 
     def connect_signals(self):
-        """Connect LIFU signals to QML bridge and UltrasoundController."""
-        if hasattr(self.interface.txdevice, 'uart'):
-            self.interface.txdevice.uart.signal_connect.connect(self.on_connected)
-            self.interface.txdevice.uart.signal_disconnect.connect(self.on_disconnected)
-            self.interface.txdevice.uart.signal_data_received.connect(self.on_data_received)
-        else:
-            logger.warning("UART interface not found in LIFUInterface.")
+        """Connect LIFUInterface signals to QML."""
+        self.interface.signal_connect.connect(self.on_connected)
+        self.interface.signal_disconnect.connect(self.on_disconnected)
+        self.interface.signal_data_received.connect(self.on_data_received)
 
-    async def start_monitoring(self):
-        """Start monitoring for USB device connections asynchronously."""
-        await self.interface.start_monitoring()
-
-    @pyqtSlot(str)
-    def on_connected(self, port):
-        """Handle LIFU device connection."""
-        self.connected_status = True
-        self.signal_connected.emit(f"Connected to {port}")
-        self.ultrasound_controller.set_tx_connected(True)  # Update UI
+    def update_state(self):
+        """Update system state based on connection and configuration."""
+        if not self._txConnected and not self._hvConnected:
+            self._state = DISCONNECTED
+        elif self._txConnected and not self._configured:
+            self._state = TX_CONNECTED
+        elif self._txConnected and self._hvConnected and self._configured:
+            self._state = READY
+        elif self._txConnected and self._configured:
+            self._state = CONFIGURED
+        self.stateChanged.emit()  # Notify QML of state update
+        logger.info(f"Updated state: {self._state}")
 
     @pyqtSlot()
-    def on_disconnected(self):
-        """Handle LIFU device disconnection."""
-        self.connected_status = False
-        self.signal_disconnected.emit()
-        self.ultrasound_controller.set_tx_connected(False)  # Update UI
+    async def start_monitoring(self):
+        """Start monitoring for device connection asynchronously."""
+        try:
+            logger.info("Starting device monitoring...")
+            await self.interface.start_monitoring()
+        except Exception as e:
+            logger.error(f"Error in start_monitoring: {e}", exc_info=True)
 
-    @pyqtSlot(str)
-    def on_data_received(self, data):
-        """Handle data received from LIFU device and emit to QML."""
-        logger.info(f"Data received: {data}")
-        self.signal_data_received.emit(data)  # Send data to QML
+    @pyqtSlot()
+    def stop_monitoring(self):
+        """Stop monitoring device connection."""
+        try:
+            logger.info("Stopping device monitoring...")
+            self.interface.stop_monitoring()
+        except Exception as e:
+            logger.error(f"Error while stopping monitoring: {e}", exc_info=True)
 
-    async def cleanup_tasks(self):
-        """Stop monitoring and cancel running asyncio tasks."""
-        self.interface.stop_monitoring()
-        loop = asyncio.get_running_loop()
-        tasks = [t for t in asyncio.all_tasks(loop) if t is not asyncio.current_task()]
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
+    @pyqtSlot(str, str)
+    def on_connected(self, descriptor, port):
+        """Handle device connection."""
+        if descriptor == "TX":
+            self._txConnected = True
+        elif descriptor == "HV":
+            self._hvConnected = True
+        self.signalConnected.emit(descriptor, port)
+        self.connectionStatusChanged.emit() 
+        self.update_state()
+
+    @pyqtSlot(str, str)
+    def on_disconnected(self, descriptor, port):
+        """Handle device disconnection."""
+        if descriptor == "TX":
+            self._txConnected = False
+        elif descriptor == "HV":
+            self._hvConnected = False
+        self.signalDisconnected.emit(descriptor, port)
+        self.connectionStatusChanged.emit() 
+        self.update_state()
+
+    @pyqtSlot(str, str)
+    def on_data_received(self, descriptor, message):
+        """Handle incoming data from the LIFU device."""
+        logger.info(f"Data received from {descriptor}: {message}")
+        self.signalDataReceived.emit(descriptor, message)
+
+    @pyqtSlot(str, float)
+    def configureSolution(self, solutionName, amplitude):
+        """Configures the solution and emits status to QML."""
+        try:
+            logger.debug("Configuring solution: %s with amplitude: %s", solutionName, amplitude)
+            solution = None  # Replace with actual configuration logic
+            if self.interface.set_solution(solution):
+                logger.info("Solution '%s' configured successfully.", solutionName)
+                self.solutionConfigured.emit(f"Solution '{solutionName}' configured.")
+            else:
+                logger.error("Failed to configure solution '%s'.", solutionName)
+                self.solutionConfigured.emit("Configuration failed.")
+        except Exception as e:
+            logger.error("Error configuring solution: %s", e)
+            self.solutionConfigured.emit("Configuration error.")
+
+    @pyqtSlot(str, str, str, str, str, str, str)
+    def generate_plot(self, x, y, z, freq, cycles, trigger, mode):
+        """Generates an ultrasound plot and emits data to QML."""
+        try:
+            logger.info(f"Generating plot: X={x}, Y={y}, Z={z}, Frequency={freq}, Cycles={cycles}, Trigger={trigger}, Mode={mode}")
+            image_data = generate_ultrasound_plot(x, y, z, freq, cycles, trigger, mode)
+
+            if image_data == "ERROR":
+                logger.error("Plot generation failed")
+            else:
+                logger.info("Plot generated successfully")
+                self.plotGenerated.emit(image_data)  # Send image data to QML
+
+        except Exception as e:
+            logger.error(f"Error generating plot: {e}")
+
+    @pyqtSlot(str, str, str, str, str, str )
+    def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ):
+        """Simulate configuring the transmitter."""
+        if self._txConnected:
+            self._configured = True
+            self.update_state()
+            logger.info("Transmitter configured")
+
+    @pyqtSlot()
+    def reset_configuration(self):
+        """Reset system configuration to defaults."""
+        self._configured = False
+        self.update_state()
+        logger.info("Configuration reset")
+
+    @pyqtSlot()
+    def start_sonication(self):
+        """Start the beam, transitioning to RUNNING state."""
+        if self._state == READY:
+            self._state = RUNNING
+            self.stateChanged.emit()
+            logger.info("Sonication started")
+
+    @pyqtSlot()
+    def stop_sonication(self):
+        """Stop the beam and return to READY state."""
+        if self._state == RUNNING:
+            self._state = READY
+            self.stateChanged.emit()
+            logger.info("Sonication stopped")
+
+    @pyqtProperty(bool, notify=connectionStatusChanged)
+    def txConnected(self):
+        """Expose TX connection status to QML."""
+        return self._txConnected
+
+    @pyqtProperty(bool, notify=connectionStatusChanged)
+    def hvConnected(self):
+        """Expose HV connection status to QML."""
+        return self._hvConnected
+
+    @pyqtProperty(int, notify=stateChanged)
+    def state(self):
+        """Expose state as a QML property."""
+        return self._state
+    
+    @pyqtProperty(bool, notify=connectionStatusChanged)
+    def txConnected(self):
+        """Expose TX connection status to QML."""
+        return self._txConnected
+
+    @pyqtProperty(bool, notify=connectionStatusChanged)
+    def hvConnected(self):
+        """Expose HV connection status to QML."""
+        return self._hvConnected
+    
+    @pyqtProperty(int, notify=stateChanged)
+    def state(self):
+        """Expose state as a QML property."""
+        return self._state
+    
