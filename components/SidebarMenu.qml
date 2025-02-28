@@ -42,6 +42,7 @@ Rectangle {
         IconButton {
             buttonIcon: "\ueab9"
             buttonText: "Test"
+            enabled: false
             Layout.alignment: Qt.AlignHCenter
             backgroundColor: sidebarMenu.activeButtonIndex === 1 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 1 ? "#2C3E50" : "#BDC3C7"
@@ -54,6 +55,7 @@ Rectangle {
         IconButton {
             buttonIcon: "\ueaae"
             buttonText: "Console"
+            enabled: false
             Layout.alignment: Qt.AlignHCenter
             backgroundColor: sidebarMenu.activeButtonIndex === 2 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 2 ? "#2C3E50" : "#BDC3C7"
@@ -66,6 +68,7 @@ Rectangle {
         IconButton {
             buttonIcon: "\ueabf"
             buttonText: "Settings"
+            enabled: false
             Layout.alignment: Qt.AlignHCenter
             backgroundColor: sidebarMenu.activeButtonIndex === 3 ? "white" : "transparent"
             iconColor: sidebarMenu.activeButtonIndex === 3 ? "#2C3E50" : "#BDC3C7"
