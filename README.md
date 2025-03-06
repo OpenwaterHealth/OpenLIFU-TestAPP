@@ -1,30 +1,28 @@
 # OpenLIFU Test Application
 
-## Using the Resource File QRC
-This Embed resources and ensures that assets are packaged with the application supporting portability, while simplifying paths
+Python example UI for OPEN LIFU used for Hardware Testing and Basic Usage
 
-### Steps to Compile and Use
-1. Compile the QRC File: Run the following command to generate the Python resource file
-    ```bash
-    pyside6-rcc -o resources_rc.py resources.qrc
-    ```
-2. Import the Generated Resource File: Add this to the top of your main.py
-    ```bash
-    import resources_rc
-    ```
-3. Reference the Resources in QML: Use the qrc:/ prefix to access the resources
-    ```bash
-    // Reference an image
-    Image {
-        source: "qrc:/images/OpenwaterLogo.png"
-        anchors.fill: parent
-        fillMode: Image.PreserveAspectFit
-    }
+![App Image](docs/app_image.png)
 
-    // Reference a font
-    FontLoader {
-        id: iconFont
-        source: "qrc:/fonts/keenicons-outline.ttf"
-    }
-    ```
+## Installation
 
+### Prerequisites
+- **Python 3.9 or later**: Make sure you have Python 3.9 or later installed on your system. You can download it from the [official Python website](https://www.python.org/downloads/).
+
+### Steps to Set Up the Project
+1. **Clone the repository and Install Required Packages**:
+   ```bash
+   git clone https://github.com/OpenwaterHealth/OpenLIFU-TestAPP.git
+   cd OpenLIFU-TestAPP
+   pip install -r requirements.txt
+   ```
+
+2. **Install OpenLIFU Python**
+   ```bash
+   https://github.com/OpenwaterHealth/OpenLIFU-python.git
+   ```
+
+3. **Run application**
+   ```bash
+   python main.py
+   ```
