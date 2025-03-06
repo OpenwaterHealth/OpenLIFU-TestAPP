@@ -139,19 +139,6 @@ class LIFUConnector(QObject):
     def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ):
         """Simulate configuring the transmitter."""
         if self._txConnected:
-            json_trigger_data = {
-                "TriggerFrequencyHz": triggerHZ,
-                "TriggerMode": 1,
-                "TriggerPulseCount": 0,
-                "TriggerPulseWidthUsec": 20000
-            }
-            trigger_setting = self.interface.txdevice.set_trigger_json(data=json_trigger_data)
-            if trigger_setting:
-                print(f"Trigger Setting: {trigger_setting}")
-            else:
-                print("Failed to set trigger setting.")
-            tx_chip_count = self.interface.txdevice.enum_tx7332_devices()
-            logger.debug(f'TX CHIP COUNT: {tx_chip_count}')
             pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=2e-5)
             pt = Point(position=(int(xInput),int(yInput),int(zInput)), units="mm")
             sequence = Sequence(
@@ -192,7 +179,7 @@ class LIFUConnector(QObject):
     def start_sonication(self):
         """Start the beam, transitioning to RUNNING state."""
         if self._state == READY:
-            if self.interface.txdevice.start_trigger():
+            if self.interface.start_sonication():
                 self._state = RUNNING
             else:
                 logger.info("Failed to start trigger")
@@ -203,7 +190,7 @@ class LIFUConnector(QObject):
     def stop_sonication(self):
         """Stop the beam and return to READY state."""
         if self._state == RUNNING:
-            if self.interface.txdevice.stop_trigger():
+            if self.interface.stop_sonication():
                 self._state = READY
             else:
                 logger.info("Failed to stop trigger")
