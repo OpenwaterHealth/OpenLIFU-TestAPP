@@ -269,6 +269,49 @@ Rectangle {
                             anchors.topMargin: 5  // 5px spacing from the top
                         }
                         
+
+                        // Content for comms tests
+                        GridLayout {
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.leftMargin: 20
+                            anchors.topMargin: 60
+                            columns: 5
+                            rowSpacing: 10
+                            columnSpacing: 10
+
+
+                            Text { text: "Voltage (+/-):"; color: "white" }
+                            TextField { id: voltage; text: "12.0" }
+
+                            Item {
+                                Layout.preferredWidth: 200
+                            }
+
+
+                            Button {
+                                id: v12Enable
+                                text: "12V Enable"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#BDC3C7"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    id: v12EnableButtonBackground
+                                    color: v12Enable.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    radius: 4
+                                    border.color: v12Enable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                }
+
+                            }
+                        }
                     }
 
                     // Fan Tests Box
