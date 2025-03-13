@@ -28,7 +28,8 @@ class LIFUConnector(QObject):
 
     # New Signals for data updates
     deviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
-    temperatureUpdated = pyqtSignal(float, float)  # (temp1, temp2)
+    temperatureHvUpdated = pyqtSignal(float, float)  # (temp1, temp2)
+    temperatureTxUpdated = pyqtSignal(float, float)  # (tx_temp, amb_temp)
 
     stateChanged = pyqtSignal()  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
@@ -252,8 +253,21 @@ class LIFUConnector(QObject):
             temp1 = self.interface.hvcontroller.get_temperature1()  
             temp2 = self.interface.hvcontroller.get_temperature2()  
 
-            self.temperatureUpdated.emit(temp1, temp2)
+            self.temperatureHvUpdated.emit(temp1, temp2)
             logger.info(f"Temperature Data - Temp1: {temp1}, Temp2: {temp2}")
+        except Exception as e:
+            logger.error(f"Error querying temperature data: {e}")
+
+
+    @pyqtSlot()
+    def queryTxTemperature(self):
+        """Fetch and emit temperature data."""
+        try:
+            tx_temp = self.interface.txdevice.get_temperature()  
+            amb_temp = self.interface.txdevice.get_ambient_temperature()  
+
+            self.temperatureTxUpdated.emit(tx_temp, amb_temp)
+            logger.info(f"Temperature Data - Temp1: {tx_temp}, Temp2: {amb_temp}")
         except Exception as e:
             logger.error(f"Error querying temperature data: {e}")
 
@@ -261,7 +275,20 @@ class LIFUConnector(QObject):
     def softResetHV(self):
         """reset hardware HV device."""
         try:
-            temp1 = self.interface.hvcontroller.soft_reset()  
-            logger.info(f"Software Reset Sent")
+            if self.interface.hvcontroller.soft_reset():
+                logger.info(f"Software Reset Sent")
+            else:
+                logger.error(f"Failed to send Software Reset")
+        except Exception as e:
+            logger.error(f"Error Sending Software Reset: {e}")
+
+    @pyqtSlot()
+    def softResetTX(self):
+        """reset hardware TX device."""
+        try:
+            if self.interface.txdevice.soft_reset():
+                logger.info(f"Software Reset Sent")
+            else:
+                logger.error(f"Failed to send Software Reset")
         except Exception as e:
             logger.error(f"Error Sending Software Reset: {e}")

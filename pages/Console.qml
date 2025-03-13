@@ -26,7 +26,7 @@ Rectangle {
             LIFUConnector.queryHvTemperature()
         }
     }
-    
+
     Timer {
         id: infoTimer
         interval: 500   // Delay to ensure HV is stable before fetching info
@@ -61,7 +61,7 @@ Rectangle {
         }
 
         // Handle temperature updates
-        onTemperatureUpdated: (temp1, temp2) => {
+        onTemperatureHvUpdated: (temp1, temp2) => {
             temperature1 = temp1
             temperature2 = temp2
         }
