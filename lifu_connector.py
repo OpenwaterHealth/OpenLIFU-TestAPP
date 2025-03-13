@@ -309,7 +309,7 @@ class LIFUConnector(QObject):
         """Fetch and emit RGB state."""
         try:
             state = self.interface.hvcontroller.get_rgb_led()
-            state_text = {0: "Off", 1: "Red", 2: "Blue", 3: "Green"}.get(state, "Unknown")
+            state_text = {0: "Off", 1: "Red", 2: "Green", 3: "Blue"}.get(state, "Unknown")
 
             logger.info(f"RGB State: {state_text}")
             self.rgbStateReceived.emit(state, state_text)  # Emit both values
