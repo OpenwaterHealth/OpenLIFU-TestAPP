@@ -75,7 +75,7 @@ Rectangle {
         // Title
         Text {
             text: "LIFU Transmitter Unit Tests"
-            font.pixelSize: 24
+            font.pixelSize: 18
             font.weight: Font.Bold
             color: "white"
             horizontalAlignment: Text.AlignHCenter

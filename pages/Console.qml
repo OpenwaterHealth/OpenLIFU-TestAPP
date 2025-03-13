@@ -42,7 +42,7 @@ Rectangle {
         target: LIFUConnector
 
         // Handle HV Connected state
-        onHvConnectedChanged: {
+        function onHvConnectedChanged() {
             if (LIFUConnector.hvConnected) {
                 infoTimer.start()          // One-time info fetch
             } else {
@@ -55,13 +55,13 @@ Rectangle {
         }
 
         // Handle device info response
-        onHvDeviceInfoReceived: (fwVersion, devId) => {
+        function onHvDeviceInfoReceived(fwVersion, devId) {
             firmwareVersion = fwVersion
             deviceId = devId
         }
 
         // Handle temperature updates
-        onTemperatureHvUpdated: (temp1, temp2) => {
+        function onTemperatureHvUpdated(temp1, temp2) {
             temperature1 = temp1
             temperature2 = temp2
         }
@@ -75,7 +75,7 @@ Rectangle {
         // Title
         Text {
             text: "LIFU Console Unit Tests"
-            font.pixelSize: 24
+            font.pixelSize: 18
             font.weight: Font.Bold
             color: "white"
             horizontalAlignment: Text.AlignHCenter
@@ -104,7 +104,7 @@ Rectangle {
                     // Communication Tests Box
                     Rectangle {
                         width: 650
-                        height: 190
+                        height: 195
                         radius: 6
                         color: "#1E1E20"
                         border.color: "#3E4E6F"
@@ -125,7 +125,7 @@ Rectangle {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.leftMargin: 20   
-                            anchors.topMargin: 40    
+                            anchors.topMargin: 60    
                             columns: 5
                             rowSpacing: 10
                             columnSpacing: 10
@@ -133,24 +133,32 @@ Rectangle {
                             // Row 1
                             // Ping Button and Result
                             Button {
+                                id: pingButton
                                 text: "Ping"
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+
                                 contentItem: Text {
                                     text: parent.text
                                     color: "#BDC3C7"
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
+
                                 background: Rectangle {
-                                    color: "#3A3F4B"
+                                    id: pingButtonBackground
+                                    color: pingButton.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
                                     radius: 4
-                                    border.color: "#BDC3C7"
+                                    border.color: pingButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
+
+                                onClicked: pingResult.text = "Ping Successful"
                             }
                             Text {
                                 id: pingResult
-                                text: "Ping Result: "
+                                Layout.preferredWidth: 80
+                                text: ""
                                 color: "#BDC3C7"
                                 Layout.alignment: Qt.AlignVCenter
                             }
@@ -160,49 +168,64 @@ Rectangle {
                             }
 
                             Button {
+                                id: ledButton
                                 text: "Toggle LED"
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+
                                 contentItem: Text {
                                     text: parent.text
                                     color: "#BDC3C7"
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
+
                                 background: Rectangle {
-                                    color: "#3A3F4B"
+                                    id: ledButtonBackground
+                                    color: ledButton.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
                                     radius: 4
-                                    border.color: "#BDC3C7"
+                                    border.color: ledButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
+
                                 onClicked: toggleLedResult.text = "LED Toggled"
                             }
                             Text {
                                 id: toggleLedResult
+                                Layout.preferredWidth: 80
                                 color: "#BDC3C7"
-                                text: "LED State: "
+                                text: ""
                             }
 
                             // Row 2
                             // Echo Button and Result
                             Button {
+                                id: echoButton
                                 text: "Echo"
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+
                                 contentItem: Text {
                                     text: parent.text
                                     color: "#BDC3C7"
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
+
                                 background: Rectangle {
-                                    color: "#3A3F4B"
+                                    id: echoButtonBackground
+                                    color: echoButton.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
                                     radius: 4
-                                    border.color: "#BDC3C7"
+                                    border.color: echoButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
+
+                                onClicked: echoResult.text = "Echo Successful"
                             }
                             Text {
                                 id: echoResult
-                                text: "Echo Result: "
+                                Layout.preferredWidth: 80
+                                text: ""
                                 color: "#BDC3C7"
                                 Layout.alignment: Qt.AlignVCenter
                             }
@@ -216,12 +239,13 @@ Rectangle {
                                 Layout.preferredWidth: 120
                                 Layout.preferredHeight: 40
                                 model: ["Off", "Red", "Green", "Blue"]
-                                onActivated: rgbLedResult.text = "RGB LED: " + rgbLedDropdown.currentText
+                                onActivated: rgbLedResult.text = rgbLedDropdown.currentText
                             }
                             Text {
                                 id: rgbLedResult
+                                Layout.preferredWidth: 80
                                 color: "#BDC3C7"
-                                text: "RGB LED: Off"
+                                text: "Off"
                             }
                         }
                     }
@@ -229,25 +253,22 @@ Rectangle {
                     // Power Tests Box
                     Rectangle {
                         width: 650
-                        height: 190
+                        height: 195
                         radius: 8
                         color: "#1E1E20"
                         border.color: "#3E4E6F"
                         border.width: 2
 
+                        // Title at Top-Center with 5px Spacing
                         Text {
                             text: "Power Tests"
-                            anchors.centerIn: parent
                             color: "#BDC3C7"
                             font.pixelSize: 18
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.topMargin: 5  // 5px spacing from the top
                         }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onEntered: parent.color = "#16A085"
-                            onExited: parent.color = "#1E1E20"
-                        }
+                        
                     }
 
                     // Fan Tests Box
@@ -259,18 +280,89 @@ Rectangle {
                         border.color: "#3E4E6F"
                         border.width: 2
 
+                        // Title at Top-Center with 5px Spacing
                         Text {
                             text: "Fan Tests"
-                            anchors.centerIn: parent
                             color: "#BDC3C7"
                             font.pixelSize: 18
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.topMargin: 5  // 5px spacing from the top
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onEntered: parent.color = "#16A085"
-                            onExited: parent.color = "#1E1E20"
+                        // Slider for Top Fan
+                        Column {
+                            anchors.top: parent.top
+                            anchors.topMargin: 40  // Adjust spacing as needed
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: 5
+
+                            Text {
+                                text: "Top Fan: " + (topFanSlider.value === 0 ? "OFF" : topFanSlider.value.toFixed(0) + "%")
+                                color: "#BDC3C7"
+                                font.pixelSize: 14
+                            }
+
+                            Slider {
+                                id: topFanSlider
+                                width: 600  // Adjust width as needed
+                                from: 0
+                                to: 100
+                                stepSize: 10   // Snap to increments of 10
+                                value: 0  // Default value is 0 (OFF)
+
+                                property bool userIsSliding: false
+
+                                onPressedChanged: {
+                                    if (pressed) {
+                                        userIsSliding = true
+                                    } else if (!pressed && userIsSliding) {
+                                        // User has finished sliding
+                                        let snappedValue = Math.round(value / 10) * 10
+                                        value = snappedValue
+                                        console.log("Slider released at:", snappedValue)
+                                        userIsSliding = false
+                                    }
+                                }
+                            }
+                        }
+
+                        // Slider for Bottom Fan
+                        Column {
+                            anchors.top: parent.top
+                            anchors.topMargin: 110  // Adjust spacing as needed
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: 5
+
+                            Text {
+                                text: "Bottom Fan: " + (bottomFanSlider.value === 0 ? "OFF" : bottomFanSlider.value.toFixed(0) + "%")
+                                color: "#BDC3C7"
+                                font.pixelSize: 14
+                            }
+
+                            Slider {
+                                id: bottomFanSlider
+                                width: 600  // Adjust width as needed
+                                from: 0
+                                to: 100
+                                stepSize: 10   // Snap to increments of 10
+                                value: 0  // Default value is 0 (OFF)
+
+
+                                property bool userIsSliding: false
+
+                                onPressedChanged: {
+                                    if (pressed) {
+                                        userIsSliding = true
+                                    } else if (!pressed && userIsSliding) {
+                                        // User has finished sliding
+                                        let snappedValue = Math.round(value / 10) * 10
+                                        value = snappedValue
+                                        console.log("Slider released at:", snappedValue)
+                                        userIsSliding = false
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -368,7 +460,7 @@ Rectangle {
 
 
                         ColumnLayout {
-                            anchors.centerIn: parent
+                            Layout.alignment: Qt.AlignHCenter 
                             spacing: 25  
 
                             // TEMP #1 Widget
