@@ -55,7 +55,7 @@ Rectangle {
         }
 
         // Handle device info response
-        onDeviceInfoReceived: (fwVersion, devId) => {
+        onHvDeviceInfoReceived: (fwVersion, devId) => {
             firmwareVersion = fwVersion
             deviceId = devId
         }

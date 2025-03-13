@@ -27,7 +27,8 @@ class LIFUConnector(QObject):
     solutionConfigured = pyqtSignal(str)  # Signal for solution configuration feedback
 
     # New Signals for data updates
-    deviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
+    hvDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
+    txDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
     temperatureHvUpdated = pyqtSignal(float, float)  # (temp1, temp2)
     temperatureTxUpdated = pyqtSignal(float, float)  # (tx_temp, amb_temp)
 
@@ -241,7 +242,20 @@ class LIFUConnector(QObject):
             logger.info(f"Version: {fw_version}")
             hw_id = self.interface.hvcontroller.get_hardware_id()
             device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
-            self.deviceInfoReceived.emit(fw_version, device_id)
+            self.hvDeviceInfoReceived.emit(fw_version, device_id)
+            logger.info(f"Device Info - Firmware: {fw_version}, Device ID: {device_id}")
+        except Exception as e:
+            logger.error(f"Error querying device info: {e}")
+
+    @pyqtSlot()
+    def queryTxInfo(self):
+        """Fetch and emit device information."""
+        try:
+            fw_version = self.interface.txdevice.get_version()
+            logger.info(f"Version: {fw_version}")
+            hw_id = self.interface.txdevice.get_hardware_id()
+            device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
+            self.txDeviceInfoReceived.emit(fw_version, device_id)
             logger.info(f"Device Info - Firmware: {fw_version}, Device ID: {device_id}")
         except Exception as e:
             logger.error(f"Error querying device info: {e}")
