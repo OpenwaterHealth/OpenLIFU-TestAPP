@@ -17,13 +17,23 @@ Rectangle {
     property string deviceId: "N/A"
     property real temperature1: 0.0
     property real temperature2: 0.0
+    property string rgbState: "Off" // Add property for RGB state
+    property string hvState: "Off" // Add property for HV state
+    property string v12State: "Off" // Add property for 12V state
+
+    function updateStates() {
+        console.log("Updating all states...")
+        LIFUConnector.queryHvInfo()
+        LIFUConnector.queryHvTemperature()
+        LIFUConnector.queryPowerStatus() // Query power status
+        LIFUConnector.queryRGBState() // Query RGB state
+    }
 
     // Run refresh logic immediately on page load if HV is already connected
     Component.onCompleted: {
         if (LIFUConnector.hvConnected) {
             console.log("Page Loaded - HV Already Connected. Fetching Info...")
-            LIFUConnector.queryHvInfo()
-            LIFUConnector.queryHvTemperature()
+            updateStates()
         }
     }
 
@@ -33,8 +43,7 @@ Rectangle {
         running: false
         onTriggered: {
             console.log("Fetching Firmware Version and Device ID...")
-            LIFUConnector.queryHvInfo()
-            LIFUConnector.queryHvTemperature()
+            updateStates()
         }
     }
 
@@ -51,6 +60,8 @@ Rectangle {
                 deviceId = "N/A"
                 temperature1 = 0.0
                 temperature2 = 0.0
+                rgbState = "Off" // Reset RGB state
+                voltageState = "Off" // Reset voltage state
             }
         }
 
@@ -64,6 +75,28 @@ Rectangle {
         function onTemperatureHvUpdated(temp1, temp2) {
             temperature1 = temp1
             temperature2 = temp2
+        }
+
+        // Handle voltage state updates
+        function onPowerStatusReceived(v12_state, hv_state) {
+            if(hv_state)
+                hvState = "On"
+            else
+                hvState = "Off"
+
+            if(v12_state)
+                v12State = "On"
+            else
+                v12State = "Off"
+
+            hvStatus.text = hvState // Update the UI with the new voltage state
+            v12Status.text = v12State
+        }
+
+        function onRgbStateReceived(stateValue, stateText) {
+            rgbState = stateText
+            rgbLedResult.text = stateText  // Display the state as text
+            rgbLedDropdown.currentIndex = stateValue  // Sync ComboBox to received state
         }
     }
 
@@ -239,7 +272,12 @@ Rectangle {
                                 Layout.preferredWidth: 120
                                 Layout.preferredHeight: 40
                                 model: ["Off", "Red", "Green", "Blue"]
-                                onActivated: rgbLedResult.text = rgbLedDropdown.currentText
+
+                                onActivated: {
+                                    let rgbValue = rgbLedDropdown.currentIndex  // Directly map ComboBox index to integer value
+                                    LIFUConnector.setRGBState(rgbValue)         // Assuming you implement this new method
+                                    rgbLedResult.text = rgbLedDropdown.currentText
+                                }
                             }
                             Text {
                                 id: rgbLedResult
@@ -283,7 +321,8 @@ Rectangle {
 
                             Text {
                                 Layout.preferredWidth: 80
-                                text: "Voltage (+/-):"
+                                font.pixelSize: 16
+                                text: "Set HV (+/-)"
                                 color: "#BDC3C7"
                                 Layout.alignment: Qt.AlignVCenter
                             }
@@ -320,6 +359,10 @@ Rectangle {
                                     color: v12Enable.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
                                     radius: 4
                                     border.color: v12Enable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                }
+
+                                onClicked: {
+                                    LIFUConnector.toggleV12() // Toggle the HV state
                                 }
 
                             }
@@ -362,13 +405,17 @@ Rectangle {
                                     border.color: hvEnable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
 
+                                onClicked: {
+                                    LIFUConnector.toggleHV() // Toggle the HV state
+                                }
+
                             }
 
                             Text {
                                 id: hvStatus
                                 Layout.preferredWidth: 80
                                 color: "#BDC3C7"
-                                text: "Off"
+                                text: LIFUConnector.hvState ? "On" : "Off" // Bind text to HV state
                             }
                         }
                     }

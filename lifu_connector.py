@@ -26,6 +26,9 @@ class LIFUConnector(QObject):
     plotGenerated = pyqtSignal(str)  # Signal to notify QML when a new plot is ready
     solutionConfigured = pyqtSignal(str)  # Signal for solution configuration feedback
 
+    powerStatusReceived = pyqtSignal(bool, bool)  # Signal for power status updates
+    rgbStateReceived = pyqtSignal(int, str)  # Emit both integer value and text
+
     # New Signals for data updates
     hvDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
     txDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
@@ -285,6 +288,45 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error querying temperature data: {e}")
 
+    @pyqtSlot(int)
+    def setRGBState(self, state):
+        """Set the RGB state using integer values."""
+        try:
+            valid_states = [0, 1, 2, 3]
+            if state not in valid_states:
+                logger.error(f"Invalid RGB state value: {state}")
+                return
+
+            if self.interface.hvcontroller.set_rgb_led(state):
+                logger.info(f"RGB state set to: {state}")
+            else:
+                logger.error(f"Failed to set RGB state to: {state}")
+        except Exception as e:
+            logger.error(f"Error setting RGB state: {e}")
+            
+    @pyqtSlot()
+    def queryRGBState(self):
+        """Fetch and emit RGB state."""
+        try:
+            state = self.interface.hvcontroller.get_rgb_led()
+            state_text = {0: "Off", 1: "Red", 2: "Blue", 3: "Green"}.get(state, "Unknown")
+
+            logger.info(f"RGB State: {state_text}")
+            self.rgbStateReceived.emit(state, state_text)  # Emit both values
+        except Exception as e:
+            logger.error(f"Error querying RGB state: {e}")
+
+    @pyqtSlot()
+    def queryPowerStatus(self):
+        """Fetch and emit HV state."""
+        try:
+            hv_state = self.interface.hvcontroller.get_hv_status()            
+            v12_state = self.interface.hvcontroller.get_12v_status()
+            logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")
+            self.powerStatusReceived.emit(v12_state, hv_state)
+        except Exception as e:
+            logger.error(f"Error querying Power status: {e}")
+    
     @pyqtSlot()
     def softResetHV(self):
         """reset hardware HV device."""
@@ -295,6 +337,54 @@ class LIFUConnector(QObject):
                 logger.error(f"Failed to send Software Reset")
         except Exception as e:
             logger.error(f"Error Sending Software Reset: {e}")
+
+    @pyqtSlot()
+    def toggleHV(self):
+        """Toggle HV on console."""
+        try:
+            # Check the current state of HV
+            if self.interface.hvcontroller.get_hv_status():
+                # If HV is on, turn it off
+                if self.interface.hvcontroller.turn_hv_off():
+                    logger.info("HV turned off successfully")
+                else:
+                    logger.error("Failed to turn off HV")
+            else:
+                # If HV is off, turn it on
+                if self.interface.hvcontroller.turn_hv_on():
+                    logger.info("HV turned on successfully")
+                else:
+                    logger.error("Failed to turn on HV")
+            hv_state = self.interface.hvcontroller.get_hv_status()            
+            v12_state = self.interface.hvcontroller.get_12v_status()
+            logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")
+            self.powerStatusReceived.emit(v12_state, hv_state)
+        except Exception as e:
+            logger.error(f"Error toggling HV: {e}")
+
+    @pyqtSlot()
+    def toggleV12(self):
+        """Toggle V12 on console."""
+        try:
+            # Check the current state of HV
+            if self.interface.hvcontroller.get_12v_status():
+                # If HV is on, turn it off
+                if self.interface.hvcontroller.turn_12v_off():
+                    logger.info("V12 turned off successfully")
+                else:
+                    logger.error("Failed to turn off HV")
+            else:
+                # If HV is off, turn it on
+                if self.interface.hvcontroller.turn_12v_on():
+                    logger.info("V12 turned on successfully")
+                else:
+                    logger.error("Failed to turn on V12")
+            hv_state = self.interface.hvcontroller.get_hv_status()            
+            v12_state = self.interface.hvcontroller.get_12v_status()
+            logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")
+            self.powerStatusReceived.emit(v12_state, hv_state)
+        except Exception as e:
+            logger.error(f"Error toggling HV: {e}")
 
     @pyqtSlot()
     def softResetTX(self):
