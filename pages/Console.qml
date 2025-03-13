@@ -95,36 +95,182 @@ Rectangle {
                 anchors.margins: 20
                 spacing: 10
 
-                // Grid Section (2 Columns)
-                GridLayout {
+                // Vertical Stack Section
+                ColumnLayout {
                     Layout.fillHeight: true
                     Layout.preferredWidth: parent.width * 0.65
-                    columns: 2
-                    rowSpacing: 5
-                    columnSpacing: 10
+                    spacing: 10
+                    
+                    // Communication Tests Box
+                    Rectangle {
+                        width: 650
+                        height: 190
+                        radius: 6
+                        color: "#1E1E20"
+                        border.color: "#3E4E6F"
+                        border.width: 2
 
-                    Repeater {
-                        model: 20 // 2 columns x 10 rows
+                        // Title at Top-Center with 5px Spacing
+                        Text {
+                            text: "Communication Tests"
+                            color: "#BDC3C7"
+                            font.pixelSize: 18
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.topMargin: 5  // 5px spacing from the top
+                        }
 
-                        Rectangle {
-                            width: page1.width / 4
-                            height: 50
-                            radius: 8
-                            color: index % 2 === 0 ? "#2C3E50" : "#34495E"
+                        // Content for comms tests
+                        GridLayout {
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.leftMargin: 20   
+                            anchors.topMargin: 40    
+                            columns: 5
+                            rowSpacing: 10
+                            columnSpacing: 10
 
+                            // Row 1
+                            // Ping Button and Result
+                            Button {
+                                text: "Ping"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#BDC3C7"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
                             Text {
-                                text: "Cell " + (index + 1)
-                                anchors.centerIn: parent
+                                id: pingResult
+                                text: "Ping Result: "
                                 color: "#BDC3C7"
-                                font.pixelSize: 18
+                                Layout.alignment: Qt.AlignVCenter
                             }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onEntered: parent.color = "#16A085"
-                                onExited: parent.color = index % 2 === 0 ? "#2C3E50" : "#34495E"
+                            Item {
+                                Layout.preferredWidth: 200 
                             }
+
+                            Button {
+                                text: "Toggle LED"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#BDC3C7"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                                onClicked: toggleLedResult.text = "LED Toggled"
+                            }
+                            Text {
+                                id: toggleLedResult
+                                color: "#BDC3C7"
+                                text: "LED State: "
+                            }
+
+                            // Row 2
+                            // Echo Button and Result
+                            Button {
+                                text: "Echo"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#BDC3C7"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                background: Rectangle {
+                                    color: "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
+                            Text {
+                                id: echoResult
+                                text: "Echo Result: "
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 200 
+                            }
+
+                            ComboBox {
+                                id: rgbLedDropdown
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 40
+                                model: ["Off", "Red", "Green", "Blue"]
+                                onActivated: rgbLedResult.text = "RGB LED: " + rgbLedDropdown.currentText
+                            }
+                            Text {
+                                id: rgbLedResult
+                                color: "#BDC3C7"
+                                text: "RGB LED: Off"
+                            }
+                        }
+                    }
+
+                    // Power Tests Box
+                    Rectangle {
+                        width: 650
+                        height: 190
+                        radius: 8
+                        color: "#1E1E20"
+                        border.color: "#3E4E6F"
+                        border.width: 2
+
+                        Text {
+                            text: "Power Tests"
+                            anchors.centerIn: parent
+                            color: "#BDC3C7"
+                            font.pixelSize: 18
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onEntered: parent.color = "#16A085"
+                            onExited: parent.color = "#1E1E20"
+                        }
+                    }
+
+                    // Fan Tests Box
+                    Rectangle {
+                        width: 650
+                        height: 190
+                        radius: 8
+                        color: "#1E1E20"
+                        border.color: "#3E4E6F"
+                        border.width: 2
+
+                        Text {
+                            text: "Fan Tests"
+                            anchors.centerIn: parent
+                            color: "#BDC3C7"
+                            font.pixelSize: 18
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onEntered: parent.color = "#16A085"
+                            onExited: parent.color = "#1E1E20"
                         }
                     }
                 }
