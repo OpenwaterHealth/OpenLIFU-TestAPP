@@ -5,7 +5,6 @@ import QtQuick.Controls 6.0
 import QtQuick.Layouts 6.0
 
 import "components"
-import "pages"
 
 
 Window {

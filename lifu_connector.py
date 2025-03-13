@@ -1,6 +1,7 @@
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 import logging
 import numpy as np
+import base58
 from scripts.generate_ultrasound_plot import generate_ultrasound_plot  # Import the function directly
 from openlifu.io.LIFUInterface import LIFUInterface
 from openlifu.bf.pulse import Pulse
@@ -24,6 +25,10 @@ class LIFUConnector(QObject):
     signalDataReceived = pyqtSignal(str, str)  # (descriptor, data)
     plotGenerated = pyqtSignal(str)  # Signal to notify QML when a new plot is ready
     solutionConfigured = pyqtSignal(str)  # Signal for solution configuration feedback
+
+    # New Signals for data updates
+    deviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
+    temperatureUpdated = pyqtSignal(float, float)  # (temp1, temp2)
 
     stateChanged = pyqtSignal()  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
@@ -227,3 +232,36 @@ class LIFUConnector(QObject):
         """Expose state as a QML property."""
         return self._state
     
+    @pyqtSlot()
+    def queryHvInfo(self):
+        """Fetch and emit device information."""
+        try:
+            fw_version = self.interface.hvcontroller.get_version()
+            logger.info(f"Version: {fw_version}")
+            hw_id = self.interface.hvcontroller.get_hardware_id()
+            device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
+            self.deviceInfoReceived.emit(fw_version, device_id)
+            logger.info(f"Device Info - Firmware: {fw_version}, Device ID: {device_id}")
+        except Exception as e:
+            logger.error(f"Error querying device info: {e}")
+
+    @pyqtSlot()
+    def queryHvTemperature(self):
+        """Fetch and emit temperature data."""
+        try:
+            temp1 = self.interface.hvcontroller.get_temperature1()  
+            temp2 = self.interface.hvcontroller.get_temperature2()  
+
+            self.temperatureUpdated.emit(temp1, temp2)
+            logger.info(f"Temperature Data - Temp1: {temp1}, Temp2: {temp2}")
+        except Exception as e:
+            logger.error(f"Error querying temperature data: {e}")
+
+    @pyqtSlot()
+    def softResetHV(self):
+        """reset hardware HV device."""
+        try:
+            temp1 = self.interface.hvcontroller.soft_reset()  
+            logger.info(f"Software Reset Sent")
+        except Exception as e:
+            logger.error(f"Error Sending Software Reset: {e}")

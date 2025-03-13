@@ -2,6 +2,8 @@ import QtQuick 6.0
 import QtQuick.Controls 6.0
 import QtQuick.Layouts 6.0
 
+import "../components"
+
 Rectangle {
     id: page1
     width: parent.width
@@ -9,6 +11,61 @@ Rectangle {
     color: "#29292B"
     radius: 20
     opacity: 0.95
+
+    // Properties for dynamic data
+    property string firmwareVersion: "N/A"
+    property string deviceId: "N/A"
+    property real temperature1: 0.0
+    property real temperature2: 0.0
+
+    // Run refresh logic immediately on page load if HV is already connected
+    Component.onCompleted: {
+        if (LIFUConnector.hvConnected) {
+            console.log("Page Loaded - HV Already Connected. Fetching Info...")
+            LIFUConnector.queryHvInfo()
+            LIFUConnector.queryHvTemperature()
+        }
+    }
+    
+    Timer {
+        id: infoTimer
+        interval: 500   // Delay to ensure HV is stable before fetching info
+        running: false
+        onTriggered: {
+            console.log("Fetching Firmware Version and Device ID...")
+            LIFUConnector.queryHvInfo()
+            LIFUConnector.queryHvTemperature()
+        }
+    }
+
+    Connections {
+        target: LIFUConnector
+
+        // Handle HV Connected state
+        onHvConnectedChanged: {
+            if (LIFUConnector.hvConnected) {
+                infoTimer.start()          // One-time info fetch
+            } else {
+                console.log("HV Disconnected - Clearing Data...")
+                firmwareVersion = "N/A"
+                deviceId = "N/A"
+                temperature1 = 0.0
+                temperature2 = 0.0
+            }
+        }
+
+        // Handle device info response
+        onDeviceInfoReceived: (fwVersion, devId) => {
+            firmwareVersion = fwVersion
+            deviceId = devId
+        }
+
+        // Handle temperature updates
+        onTemperatureUpdated: (temp1, temp2) => {
+            temperature1 = temp1
+            temperature2 = temp2
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -25,7 +82,6 @@ Rectangle {
             Layout.alignment: Qt.AlignHCenter
         }
 
-        // Content Section
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -85,18 +141,13 @@ Rectangle {
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 20
-                        spacing: 15
+                        spacing: 10
 
                         // HV Status Indicator
                         RowLayout {
                             spacing: 8
 
-                            Text {
-                                text: "HV"
-                                font.pixelSize: 16
-                                color: "#BDC3C7"
-                                verticalAlignment: Text.AlignVCenter
-                            }
+                            Text { text: "HV"; font.pixelSize: 16; color: "#BDC3C7" }
                         
                             Rectangle {
                                 width: 20
@@ -108,72 +159,87 @@ Rectangle {
                             }
 
                             Text {
-                                text: "Not Connected"
+                                text: LIFUConnector.hvConnected ? "Connected" : "Not Connected"
                                 font.pixelSize: 16
                                 color: "#BDC3C7"
-                                verticalAlignment: Text.AlignVCenter
+                            }
+                        
+                        // Spacer to push the Refresh Button to the right
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            // Refresh Button
+                            Rectangle {
+                                width: 30
+                                height: 30
+                                radius: 15
+                                color: "#2C3E50"
+                                Layout.alignment: Qt.AlignRight  // ✅ Correct way to anchor it to the right
+
+                                // Icon Text
+                                Text {
+                                    text: "\u21BB"  // Unicode for the refresh icon
+                                    anchors.centerIn: parent
+                                    font.pixelSize: 20
+                                    font.family: iconFont.name  // Use the loaded custom font
+                                    color: "white"
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        console.log("Manual Refresh Triggered")
+                                        LIFUConnector.queryHvInfo()
+                                        LIFUConnector.queryHvTemperature()
+                                    }
+
+                                    onEntered: parent.color = "#34495E"
+                                    onExited: parent.color = "#2C3E50"
+                                }
                             }
                         }
-
-                        // Divider Line for Separation
+                        // Divider Line
                         Rectangle {
                             Layout.fillWidth: true
                             height: 2
                             color: "#3E4E6F"
                         }
 
-                        // Device ID Field
+                        // Display Device ID (Smaller Text)
                         RowLayout {
                             spacing: 8
-                            Text {
-                                text: "Device ID:"
-                                font.pixelSize: 18
-                                color: "#BDC3C7"
-                            }
-                            Text {
-                                text: LIFUConnector.deviceId
-                                font.pixelSize: 18
-                                color: "#3498DB"  // Blue for distinctiveness
-                                font.bold: true
-                            }
+                            Text { text: "Device ID:"; color: "#BDC3C7"; font.pixelSize: 14 }
+                            Text { text: deviceId; color: "#3498DB"; font.pixelSize: 14 }
                         }
 
-                        // Temperature Readings
+                        // Display Firmware Version (Smaller Text)
+                        RowLayout {
+                            spacing: 8
+                            Text { text: "Firmware Version:"; color: "#BDC3C7"; font.pixelSize: 14 }
+                            Text { text: firmwareVersion; color: "#2ECC71"; font.pixelSize: 14 }
+                        }
+
+
                         ColumnLayout {
-                            spacing: 10
+                            anchors.centerIn: parent
+                            spacing: 25  
 
-                            RowLayout {
-                                spacing: 8
-                                Text {
-                                    text: "TEMP #1:"
-                                    font.pixelSize: 18
-                                    color: "#BDC3C7"
-                                }
-                                Text {
-                                    text: LIFUConnector.temp1.toFixed(1) + " °C"
-                                    font.pixelSize: 18
-                                    color: "#F1C40F" // Yellow for visibility
-                                }
+                            // TEMP #1 Widget
+                            TemperatureWidget {
+                                id: tempWidget1
+                                temperature: temperature1
+                                tempName: "Temperature #1"
+                                Layout.alignment: Qt.AlignHCenter
                             }
 
-                            RowLayout {
-                                spacing: 8
-                                Text {
-                                    text: "TEMP #2:"
-                                    font.pixelSize: 18
-                                    color: "#BDC3C7"
-                                }
-                                Text {
-                                    text: LIFUConnector.temp2.toFixed(1) + " °C"
-                                    font.pixelSize: 18
-                                    color: "#F1C40F" // Yellow for visibility
-                                }
+                            // TEMP #2 Widget
+                            TemperatureWidget {
+                                id: tempWidget2
+                                temperature: temperature2
+                                tempName: "Temperature #2"
+                                Layout.alignment: Qt.AlignHCenter
                             }
-                        }
-
-                        // Optional Extra Space for Future Content
-                        Item {
-                            Layout.fillHeight: true
                         }
 
                         // Soft Reset Button
@@ -195,7 +261,7 @@ Rectangle {
                                 anchors.fill: parent
                                 onClicked: {
                                     console.log("Soft Reset Triggered")
-                                    LIFUConnector.softReset()
+                                    LIFUConnector.softResetHV()
                                 }
 
                                 onEntered: parent.color = "#C0392B"
@@ -210,5 +276,10 @@ Rectangle {
                 }
             }
         }
+    }
+
+    FontLoader {
+        id: iconFont
+        source: "../assets/fonts/keenicons-outline.ttf"
     }
 }
