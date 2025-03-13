@@ -327,6 +327,80 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error querying Power status: {e}")
     
+    @pyqtSlot(str, result=bool)
+    def sendPingCommand(self, target: str):
+        """Send a ping command to HV device."""
+        try:
+            if target == "HV":
+                if self.interface.hvcontroller.ping():
+                    logger.info(f"Ping command sent successfully")
+                    return True
+                else:
+                    logger.error(f"Failed to send ping command")
+                    return False
+            elif target == "TX":
+                if self.interface.txdevice.ping():
+                    logger.info(f"Ping command sent successfully")
+                    return True
+                else:
+                    logger.error(f"Failed to send ping command")
+                    return False
+            else:
+                logger.error(f"Invalid target for ping command")
+                return False
+        except Exception as e:
+            logger.error(f"Error sending ping command: {e}")
+            return False
+        
+    @pyqtSlot(str, result=bool)
+    def sendLedToggleCommand(self, target: str):
+        """Send a LED Toggle command to device."""
+        try:
+            if target == "HV":
+                if self.interface.hvcontroller.toggle_led():
+                    logger.info(f"Toggle command sent successfully")
+                    return True
+                else:
+                    logger.error(f"Failed to Toggle command")
+                    return False
+            elif target == "TX":
+                if self.interface.txdevice.toggle_led():
+                    logger.info(f"Toggle command sent successfully")
+                    return True
+                else:
+                    logger.error(f"Failed to send Toggle command")
+                    return False
+            else:
+                logger.error(f"Invalid target for Toggle command")
+                return False
+        except Exception as e:
+            logger.error(f"Error sending Toggle command: {e}")
+            return False
+        
+    @pyqtSlot(str, result=bool)
+    def sendEchoCommand(self, target: str):
+        """Send Echo command to device."""
+        try:
+            expected_data = b"Hello FROM Test Application!"
+            if target == "HV":
+                echoed_data, data_len = self.interface.hvcontroller.echo(echo_data=expected_data)
+            elif target == "TX":
+                echoed_data, data_len = self.interface.txdevice.echo(echo_data=expected_data)
+            else:
+                logger.error(f"Invalid target for Echo command")
+                return False
+
+            if echoed_data == expected_data and data_len == len(expected_data):
+                logger.info(f"Echo command successful - Data matched")
+                return True
+            else:
+                logger.error(f"Echo command failed - Data mismatch")
+                return False
+            
+        except Exception as e:
+            logger.error(f"Error sending Echo command: {e}")
+            return False
+        
     @pyqtSlot()
     def softResetHV(self):
         """reset hardware HV device."""

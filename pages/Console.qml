@@ -186,7 +186,15 @@ Rectangle {
                                     border.color: pingButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
 
-                                onClicked: pingResult.text = "Ping Successful"
+                                onClicked: {
+                                    if(LIFUConnector.sendPingCommand("HV")){                                        
+                                        pingResult.text = "Ping SUCCESS"
+                                        pingResult.color = "green"
+                                    }else{
+                                        pingResult.text = "Ping FAILED"
+                                        pingResult.color = "red"
+                                    }
+                                }
                             }
                             Text {
                                 id: pingResult
@@ -221,7 +229,17 @@ Rectangle {
                                     border.color: ledButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
 
-                                onClicked: toggleLedResult.text = "LED Toggled"
+                                onClicked: {
+                                    if(LIFUConnector.sendLedToggleCommand("HV"))
+                                    {
+                                        toggleLedResult.text = "LED Toggled"
+                                        toggleLedResult.color = "green"
+                                    }
+                                    else{
+                                        toggleLedResult.text = "LED Toggle FAILED"
+                                        toggleLedResult.color = "red"
+                                    }
+                                }
                             }
                             Text {
                                 id: toggleLedResult
@@ -253,7 +271,18 @@ Rectangle {
                                     border.color: echoButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
 
-                                onClicked: echoResult.text = "Echo Successful"
+                                onClicked: {
+
+                                    if(LIFUConnector.sendEchoCommand("HV"))
+                                    {
+                                        echoResult.text = "Echo SUCCESS"
+                                        echoResult.color = "green"
+                                    }
+                                    else{
+                                        echoResult.text = "Echo FAILED"
+                                        echoResult.color = "red"
+                                    }
+                                } 
                             }
                             Text {
                                 id: echoResult
