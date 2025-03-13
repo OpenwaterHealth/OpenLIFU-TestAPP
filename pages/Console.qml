@@ -281,8 +281,20 @@ Rectangle {
                             columnSpacing: 10
 
 
-                            Text { text: "Voltage (+/-):"; color: "white" }
-                            TextField { id: voltage; text: "12.0" }
+                            Text {
+                                Layout.preferredWidth: 80
+                                text: "Voltage (+/-):"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            ComboBox {
+                                id: hvDropdown
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 40
+                                model: ["10", "25", "50", "100"]
+                                // onActivated: rgbLedResult.text = rgbLedDropdown.currentText
+                            }
 
                             Item {
                                 Layout.preferredWidth: 200
@@ -310,6 +322,53 @@ Rectangle {
                                     border.color: v12Enable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
                                 }
 
+                            }
+                            Text {
+                                id: v12Status
+                                Layout.preferredWidth: 80
+                                color: "#BDC3C7"
+                                text: "Off"
+                            }
+
+
+                            Item {
+                            }
+
+                            Item {
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 200
+                            }
+
+                            Button {
+                                id: hvEnable
+                                text: "HV Enable"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "#BDC3C7"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    id: hvEnableButtonBackground
+                                    color: hvEnable.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    radius: 4
+                                    border.color: hvEnable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                }
+
+                            }
+
+                            Text {
+                                id: hvStatus
+                                Layout.preferredWidth: 80
+                                color: "#BDC3C7"
+                                text: "Off"
                             }
                         }
                     }
