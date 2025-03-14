@@ -22,6 +22,7 @@ Rectangle {
         console.log("Updating all states...")
         LIFUConnector.queryTxInfo()
         LIFUConnector.queryTxTemperature()
+        LIFUConnector.queryTriggerInfo()
     }
 
     // Run refresh logic immediately on page load if TX is already connected
@@ -72,6 +73,11 @@ Rectangle {
         onTemperatureTxUpdated: (tx_temp, amb_temp) => {
             tx_temperature = tx_temp
             amb_temperature = amb_temp
+        }
+
+        onTriggerStateChanged: (state) => {
+            triggerStatus.text = state ? "On" : "Off";
+            triggerStatus.color = state ? "green" : "red";
         }
     }
 
@@ -318,7 +324,7 @@ Rectangle {
                     // Trigger Tests
                     Rectangle {
                         width: 650
-                        height: 195
+                        height: 390
                         radius: 6
                         color: "#1E1E20"
                         border.color: "#3E4E6F"
@@ -326,34 +332,147 @@ Rectangle {
 
                         // Title at Top-Center with 5px Spacing
                         Text {
-                            text: "Trigger Pulse Tests"
+                            text: "Trigger and TX Output Tests"
                             color: "#BDC3C7"
                             font.pixelSize: 18
                             anchors.top: parent.top
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.topMargin: 5  // 5px spacing from the top
                         }
-                    }
-                    
-                    // TX Output Tests
-                    Rectangle {
-                        width: 650
-                        height: 195
-                        radius: 6
-                        color: "#1E1E20"
-                        border.color: "#3E4E6F"
-                        border.width: 2
+                        
 
-                        // Title at Top-Center with 5px Spacing
-                        Text {
-                            text: "TX Output Tests"
-                            color: "#BDC3C7"
-                            font.pixelSize: 18
+                        // Content for comms tests
+                        GridLayout {
+                            anchors.left: parent.left
                             anchors.top: parent.top
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.topMargin: 5  // 5px spacing from the top
+                            anchors.leftMargin: 20
+                            anchors.topMargin: 60
+                            columns: 5
+                            rowSpacing: 10
+                            columnSpacing: 10
+
+
+                            Text {
+                                Layout.preferredWidth: 100
+                                font.pixelSize: 16
+                                text: "Trigger Pulse"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            ComboBox {
+                                id: triggerDropdown
+                                Layout.preferredWidth: 200
+                                Layout.preferredHeight: 40
+                                model: ["10Hz 20ms Pulse", "20Hz 10ms Pulse", "40Hz 5ms Pulse"]
+                                enabled: LIFUConnector.txConnected
+
+                                onActivated: {
+                                    var selectedIndex = triggerDropdown.currentIndex;
+
+                                    // Define the JSON object
+                                    var json_trigger_data = {
+                                        "TriggerFrequencyHz": 0, // Will be updated based on the index
+                                        "TriggerPulseCount": 0,
+                                        "TriggerPulseWidthUsec": 0, // Will be updated based on the index
+                                        "TriggerPulseTrainInterval": 0,
+                                        "TriggerPulseTrainCount": 0,
+                                        "TriggerMode": 1,
+                                        "ProfileIndex": 0,
+                                        "ProfileIncrement": 0
+                                    };
+
+                                    // Update frequency and pulse width based on the selected index
+                                    switch (selectedIndex) {
+                                        case 0: // 10Hz 20ms Pulse
+                                            json_trigger_data.TriggerFrequencyHz = 10;
+                                            json_trigger_data.TriggerPulseWidthUsec = 20000;
+                                            break;
+                                        case 1: // 20Hz 10ms Pulse
+                                            json_trigger_data.TriggerFrequencyHz = 20;
+                                            json_trigger_data.TriggerPulseWidthUsec = 10000;
+                                            break;
+                                        case 2: // 40Hz 5ms Pulse
+                                            json_trigger_data.TriggerFrequencyHz = 40;
+                                            json_trigger_data.TriggerPulseWidthUsec = 5000;
+                                            break;
+                                        default:
+                                            console.log("Invalid selection");
+                                            return;
+                                    }
+
+                                    // Convert the object to a JSON string
+                                    var jsonString = JSON.stringify(json_trigger_data);
+
+                                    // Call your function with the selected index
+                                    var success = LIFUConnector.setTrigger(jsonString);
+                                    if (success) {
+                                        console.log("JSON data sent successfully");
+                                    } else {
+                                        console.log("Failed to send JSON data");
+                                    }
+
+                                }
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 100
+                            }
+
+
+                            Button {
+                                id: triggerEnable
+                                text: "Toggle Trigger"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.txConnected 
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    id: triggerButtonBackground
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
+                                    radius: 4
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
+                                }
+
+                                onClicked: {
+                                    // Toggle the trigger state
+                                    var success = LIFUConnector.toggleTrigger();
+                                    if (success) {
+                                        console.log("Trigger toggled successfully.");
+                                    } else {
+                                        console.log("Failed to toggle trigger.");
+                                    }
+                                }
+
+                            }
+
+                            Text {
+                                id: triggerStatus
+                                Layout.preferredWidth: 80
+                                text: ""
+                                color: "#BDC3C7"
+                            }
                         }
-                    }
+
+                    }                    
                 }
 
                 // Large Third Column

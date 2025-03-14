@@ -2,6 +2,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 import logging
 import numpy as np
 import base58
+import json
 from scripts.generate_ultrasound_plot import generate_ultrasound_plot  # Import the function directly
 from openlifu.io.LIFUInterface import LIFUInterface
 from openlifu.bf.pulse import Pulse
@@ -37,7 +38,8 @@ class LIFUConnector(QObject):
 
     stateChanged = pyqtSignal()  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
-
+    triggerStateChanged = pyqtSignal(bool)  # 🔹 New signal for trigger state change
+    
     def __init__(self, hv_test_mode=False):
         super().__init__()
         self.interface = LIFUInterface(HV_test_mode=hv_test_mode, run_async=True)
@@ -45,6 +47,7 @@ class LIFUConnector(QObject):
         self._hvConnected = False
         self._configured = False
         self._state = DISCONNECTED
+        self._trigger_state = False  # Internal state to track trigger status
 
         self.connect_signals()
 
@@ -66,6 +69,20 @@ class LIFUConnector(QObject):
             self._state = CONFIGURED
         self.stateChanged.emit()  # Notify QML of state update
         logger.info(f"Updated state: {self._state}")
+
+    def _update_trigger_state(self, trigger_data):
+        """Helper method to update trigger state and emit signal."""
+        try:
+            trigger_status = trigger_data.get("TriggerStatus", "STOPPED")
+            new_trigger_state = trigger_status == "RUNNING"
+
+            if new_trigger_state != self._trigger_state:
+                self._trigger_state = new_trigger_state
+                self.triggerStateChanged.emit(self._trigger_state)
+
+        except Exception as e:
+            logger.error(f"Error updating trigger state: {e}")
+
 
     @pyqtSlot()
     async def start_monitoring(self):
@@ -432,7 +449,96 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error setting Fan Speed: {e}")
             return False
+    
+    @pyqtSlot(str, result=bool)
+    def setTrigger(self, triggerjson: str):
+        """Set trigger settings on the device using JSON data."""
+        try:
+            json_trigger_data = json.loads(triggerjson)
+            
+            trigger_setting = self.interface.txdevice.set_trigger_json(data=json_trigger_data)
 
+            if trigger_setting:
+                self._update_trigger_state(trigger_setting)  # Update trigger state dynamically
+                logger.info(f"Trigger Setting: {trigger_setting}")
+                return True
+            else:
+                logger.error("Failed to set trigger setting.")
+                return False
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON data: {e}")
+            return False
+
+        except AttributeError as e:
+            logger.error(f"Invalid interface or method: {e}")
+            return False
+
+        except Exception as e:
+            logger.error(f"Unexpected error while setting trigger: {e}")
+            return False
+
+    @pyqtSlot(result=bool)
+    def toggleTrigger(self):
+        """Toggle the trigger state (start or stop)."""
+        try:
+            if self._trigger_state:
+                # Stop the trigger
+                success = self.interface.txdevice.stop_trigger()
+                if success:
+                    logger.info("Trigger stopped successfully.")
+                    self._trigger_state = False
+                else:
+                    logger.error("Failed to stop trigger.")
+            else:
+                # Start the trigger
+                success = self.interface.txdevice.start_trigger()
+                if success:
+                    logger.info("Trigger started successfully.")
+                    self._trigger_state = True
+                else:
+                    logger.error("Failed to start trigger.")
+
+            # Emit the updated trigger state
+            self.triggerStateChanged.emit(self._trigger_state)
+            return success
+
+        except AttributeError as e:
+            logger.error(f"Invalid interface or method: {e}")
+            return False
+
+        except Exception as e:
+            logger.error(f"Unexpected error while toggling trigger: {e}")
+            return False
+
+    @pyqtSlot(result=bool)
+    def queryTriggerInfo(self):
+        """Query the trigger status and update the state accordingly.
+
+        Returns:
+            bool: True if the query was successful, False otherwise.
+        """
+        try:
+            trigger_data = self.interface.txdevice.get_trigger_json()
+
+            if isinstance(trigger_data, str):
+                trigger_data = json.loads(trigger_data)
+
+            self._update_trigger_state(trigger_data)
+            return True
+
+        except json.JSONDecodeError:
+            logger.error("Failed to decode trigger status JSON.")
+            return False
+
+        except AttributeError as e:
+            logger.error(f"Invalid interface or method: {e}")
+            return False
+
+        except Exception as e:
+            logger.error(f"Unexpected error while querying trigger info: {e}")
+            return False
+        
     @pyqtSlot()
     def softResetHV(self):
         """reset hardware HV device."""
