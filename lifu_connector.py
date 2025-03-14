@@ -400,7 +400,39 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error sending Echo command: {e}")
             return False
-        
+    
+    @pyqtSlot(str, result=bool)
+    def setHVCommand(self, strval: str):
+        """Set High voltage command to device."""
+        try:
+            voltage = float(strval)
+            if self.interface.hvcontroller.set_voltage(voltage=voltage):
+                logger.info(f"Voltage set successfully")
+                return True
+            else:   
+                logger.error(f"Failed to set voltage")
+                return False    
+                        
+        except Exception as e:
+            logger.error(f"Error setting High Voltage: {e}")
+            return False
+    
+    @pyqtSlot(int, int, result=bool)
+    def setFanLevel(self, fid: int, speed: int):
+        """Set Fan Level to device."""
+        try:
+            
+            if self.interface.hvcontroller.set_fan_speed(fan_id=fid, fan_speed=speed) == speed:
+                logger.info(f"Fan set successfully")
+                return True
+            else:   
+                logger.error(f"Failed to set Fan Speed")
+                return False    
+                        
+        except Exception as e:
+            logger.error(f"Error setting Fan Speed: {e}")
+            return False
+
     @pyqtSlot()
     def softResetHV(self):
         """reset hardware HV device."""

@@ -62,6 +62,11 @@ Rectangle {
                 temperature2 = 0.0
                 rgbState = "Off" // Reset RGB state
                 voltageState = "Off" // Reset voltage state
+                pingResult.text = ""
+                echoResult.text = ""
+                toggleLedResult.text = ""
+                rgbLedResult.text = ""
+
             }
         }
 
@@ -171,19 +176,30 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.hvConnected 
 
                                 contentItem: Text {
                                     text: parent.text
-                                    color: "#BDC3C7"
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
 
                                 background: Rectangle {
                                     id: pingButtonBackground
-                                    color: pingButton.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
                                     radius: 4
-                                    border.color: pingButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
                                 }
 
                                 onClicked: {
@@ -214,19 +230,30 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.hvConnected 
 
                                 contentItem: Text {
                                     text: parent.text
-                                    color: "#BDC3C7"
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
 
                                 background: Rectangle {
                                     id: ledButtonBackground
-                                    color: ledButton.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
                                     radius: 4
-                                    border.color: ledButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
                                 }
 
                                 onClicked: {
@@ -256,19 +283,30 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.hvConnected 
 
                                 contentItem: Text {
                                     text: parent.text
-                                    color: "#BDC3C7"
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
 
                                 background: Rectangle {
                                     id: echoButtonBackground
-                                    color: echoButton.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
                                     radius: 4
-                                    border.color: echoButton.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
                                 }
 
                                 onClicked: {
@@ -301,6 +339,7 @@ Rectangle {
                                 Layout.preferredWidth: 120
                                 Layout.preferredHeight: 40
                                 model: ["Off", "Red", "Green", "Blue"]
+                                enabled: LIFUConnector.hvConnected 
 
                                 onActivated: {
                                     let rgbValue = rgbLedDropdown.currentIndex  // Directly map ComboBox index to integer value
@@ -360,8 +399,23 @@ Rectangle {
                                 id: hvDropdown
                                 Layout.preferredWidth: 120
                                 Layout.preferredHeight: 40
-                                model: ["10", "25", "50", "100"]
-                                // onActivated: rgbLedResult.text = rgbLedDropdown.currentText
+                                model: ["-", "10", "25", "50", "100"]
+                                enabled: LIFUConnector.hvConnected 
+
+                                onActivated: {
+                                    var selectedValue = hvDropdown.currentText;
+
+                                    if (selectedValue !== "-") {
+                                        var success = LIFUConnector.setHVCommand(selectedValue);
+                                        if (success) {
+                                            console.log("Voltage set successfully");
+                                        }  else {
+                                            console.log("Failed to set voltage. Resetting ComboBox to '-'");
+                                            // Reset the ComboBox to "-"
+                                            hvDropdown.currentIndex = 0; // Index 0 corresponds to "-"
+                                        }
+                                    }
+                                }
                             }
 
                             Item {
@@ -375,19 +429,30 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.hvConnected 
 
                                 contentItem: Text {
                                     text: parent.text
-                                    color: "#BDC3C7"
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
 
                                 background: Rectangle {
                                     id: v12EnableButtonBackground
-                                    color: v12Enable.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
                                     radius: 4
-                                    border.color: v12Enable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
                                 }
 
                                 onClicked: {
@@ -419,19 +484,30 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.hvConnected && hvDropdown.currentText !== "-"  // Enable button only if a valid value is selected
 
                                 contentItem: Text {
                                     text: parent.text
-                                    color: "#BDC3C7"
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
 
                                 background: Rectangle {
                                     id: hvEnableButtonBackground
-                                    color: hvEnable.hovered ? "#4A90E2" : "#3A3F4B"  // Blue on hover
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
                                     radius: 4
-                                    border.color: hvEnable.hovered ? "#FFFFFF" : "#BDC3C7"  // White border on hover
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
                                 }
 
                                 onClicked: {
@@ -488,6 +564,7 @@ Rectangle {
                                 to: 100
                                 stepSize: 10   // Snap to increments of 10
                                 value: 0  // Default value is 0 (OFF)
+                                enabled: LIFUConnector.hvConnected
 
                                 property bool userIsSliding: false
 
@@ -500,6 +577,14 @@ Rectangle {
                                         value = snappedValue
                                         console.log("Slider released at:", snappedValue)
                                         userIsSliding = false
+                                        // Call the backend method with fan_id and speed
+                                        let fanId = 1; // Example fan ID (adjust as needed) TOP
+                                        let success = LIFUConnector.setFanLevel(fanId, snappedValue);
+                                        if (success) {
+                                            console.log("Fan speed set successfully");
+                                        } else {
+                                            console.log("Failed to set fan speed");
+                                        }
                                     }
                                 }
                             }
@@ -511,6 +596,7 @@ Rectangle {
                             anchors.topMargin: 110  // Adjust spacing as needed
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: 5
+                            enabled: LIFUConnector.hvConnected
 
                             Text {
                                 text: "Bottom Fan: " + (bottomFanSlider.value === 0 ? "OFF" : bottomFanSlider.value.toFixed(0) + "%")
@@ -538,6 +624,14 @@ Rectangle {
                                         value = snappedValue
                                         console.log("Slider released at:", snappedValue)
                                         userIsSliding = false
+                                        // Call the backend method with fan_id and speed
+                                        let fanId = 0; // Example fan ID (adjust as needed) Bottom
+                                        let success = LIFUConnector.setFanLevel(fanId, snappedValue);
+                                        if (success) {
+                                            console.log("Fan speed set successfully");
+                                        } else {
+                                            console.log("Failed to set fan speed");
+                                        }
                                     }
                                 }
                             }
@@ -590,8 +684,9 @@ Rectangle {
                                 width: 30
                                 height: 30
                                 radius: 15
-                                color: "#2C3E50"
-                                Layout.alignment: Qt.AlignRight  // ✅ Correct way to anchor it to the right
+                                color: enabled ? "#2C3E50" : "#7F8C8D"  // Dim when disabled
+                                Layout.alignment: Qt.AlignRight  
+                                enabled: LIFUConnector.hvConnected
 
                                 // Icon Text
                                 Text {
@@ -599,22 +694,24 @@ Rectangle {
                                     anchors.centerIn: parent
                                     font.pixelSize: 20
                                     font.family: iconFont.name  // Use the loaded custom font
-                                    color: "white"
+                                    color: enabled ? "white" : "#BDC3C7"  // Dim icon text when disabled
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
+                                    enabled: parent.enabled  // MouseArea also disabled when button is disabled
                                     onClicked: {
                                         console.log("Manual Refresh Triggered")
                                         LIFUConnector.queryHvInfo()
                                         LIFUConnector.queryHvTemperature()
                                     }
 
-                                    onEntered: parent.color = "#34495E"
-                                    onExited: parent.color = "#2C3E50"
+                                    onEntered: if (parent.enabled) parent.color = "#34495E"  // Highlight only when enabled
+                                    onExited: parent.color = enabled ? "#2C3E50" : "#7F8C8D"
                                 }
                             }
                         }
+
                         // Divider Line
                         Rectangle {
                             Layout.fillWidth: true
@@ -663,25 +760,35 @@ Rectangle {
                             Layout.fillWidth: true
                             height: 40
                             radius: 10
-                            color: "#E74C3C"
+                            color: enabled ? "#E74C3C" : "#7F8C8D"  // Red when enabled, gray when disabled
+                            enabled: LIFUConnector.hvConnected  // Enable/disable based on HV connection
 
                             Text {
                                 text: "Soft Reset"
                                 anchors.centerIn: parent
-                                color: "white"
+                                color: parent.enabled ? "white" : "#BDC3C7"  // White when enabled, light gray when disabled
                                 font.pixelSize: 18
                                 font.weight: Font.Bold
                             }
 
                             MouseArea {
                                 anchors.fill: parent
+                                enabled: parent.enabled  // Disable MouseArea when the button is disabled
                                 onClicked: {
                                     console.log("Soft Reset Triggered")
                                     LIFUConnector.softResetHV()
                                 }
 
-                                onEntered: parent.color = "#C0392B"
-                                onExited: parent.color = "#E74C3C"
+                                onEntered: {
+                                    if (parent.enabled) {
+                                        parent.color = "#C0392B"  // Darker red on hover (only when enabled)
+                                    }
+                                }
+                                onExited: {
+                                    if (parent.enabled) {
+                                        parent.color = "#E74C3C"  // Restore original color (only when enabled)
+                                    }
+                                }
                             }
 
                             Behavior on color {
