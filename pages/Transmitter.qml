@@ -79,6 +79,11 @@ Rectangle {
             triggerStatus.text = state ? "On" : "Off";
             triggerStatus.color = state ? "green" : "red";
         }
+
+        onTxConfigStateChanged: (state) => {
+            txconfigStatus.text = state ? "Configured" : "NOT Configured";
+            txconfigStatus.color = state ? "green" : "red";
+        }
     }
 
     ColumnLayout {
@@ -351,7 +356,6 @@ Rectangle {
                             rowSpacing: 10
                             columnSpacing: 10
 
-
                             Text {
                                 Layout.preferredWidth: 100
                                 font.pixelSize: 16
@@ -466,6 +470,108 @@ Rectangle {
 
                             Text {
                                 id: triggerStatus
+                                Layout.preferredWidth: 80
+                                text: ""
+                                color: "#BDC3C7"
+                            }
+                            
+                            Text {
+                                Layout.preferredWidth: 100
+                                font.pixelSize: 16
+                                text: "TX Config"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            ComboBox {
+                                id: txconfigDropdown
+                                Layout.preferredWidth: 200
+                                Layout.preferredHeight: 40
+                                model: ["100KHz", "200KHz", "400KHz"]
+                                enabled: LIFUConnector.txConnected
+
+                                onActivated: {
+                                    if(LIFUConnector.triggerEnabled){
+                                        LIFUConnector.toggleTrigger();
+                                        txconfigStatus.text = ""
+                                    }
+                                }
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 100
+                            }
+
+                            Button {
+                                id: setTxConfig
+                                text: "Set TX Config"
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 50
+                                hoverEnabled: true  // Enable hover detection
+                                enabled: LIFUConnector.txConnected 
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    id: setTxConfigBackground
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
+                                    radius: 4
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
+                                }
+
+                                onClicked: {
+                                    // Set configuration of transmitter
+                                    
+                                    if(LIFUConnector.triggerEnabled){
+                                        LIFUConnector.toggleTrigger();
+                                    }
+                                    txconfigStatus.text = ""
+                                    var selectedIndex = txconfigDropdown.currentIndex;
+                                    let frequency = 400000
+                                    let pulse_count = 5
+
+                                    // Update frequency and pulse width based on the selected index
+                                    switch (selectedIndex) {
+                                        case 0: // 100KHz 
+                                            frequency = 100000
+                                            pulse_count = 10
+                                            break;
+                                        case 1: // 200KHz 
+                                            frequency = 200000
+                                            pulse_count = 10
+                                            break;
+                                        case 2: // 400KHz 
+                                            frequency = 400000
+                                            pulse_count = 10
+                                            break;
+                                        default:
+                                            console.log("Invalid selection");
+                                            return;
+                                    }
+
+                                    // Call your function with the selected index
+                                    LIFUConnector.setSimpleTxConfig(frequency, pulse_count);
+                                }
+
+                            }
+
+                            Text {
+                                id: txconfigStatus
                                 Layout.preferredWidth: 80
                                 text: ""
                                 color: "#BDC3C7"

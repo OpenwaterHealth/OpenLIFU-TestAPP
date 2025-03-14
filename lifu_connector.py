@@ -39,7 +39,8 @@ class LIFUConnector(QObject):
     stateChanged = pyqtSignal()  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
     triggerStateChanged = pyqtSignal(bool)  # 🔹 New signal for trigger state change
-    
+    txConfigStateChanged = pyqtSignal(bool)  # 🔹 New signal for tx configured state change
+
     def __init__(self, hv_test_mode=False):
         super().__init__()
         self.interface = LIFUInterface(HV_test_mode=hv_test_mode, run_async=True)
@@ -48,6 +49,7 @@ class LIFUConnector(QObject):
         self._configured = False
         self._state = DISCONNECTED
         self._trigger_state = False  # Internal state to track trigger status
+        self._txconfigured_state = False  # Internal state to track trigger status
 
         self.connect_signals()
 
@@ -195,6 +197,50 @@ class LIFUConnector(QObject):
             self.update_state()
             logger.info("Transmitter configured")
 
+        
+    @pyqtSlot(int, int, result=bool)
+    def setSimpleTxConfig(self, freq: float, pulses: int):
+        pulse = Pulse(frequency=freq, amplitude=10.0, duration=2e-5)
+        pt = Point(position=(0, 0, 50), units="mm")
+        sequence = Sequence(
+            pulse_interval=0.1,
+            pulse_count=pulses,
+            pulse_train_interval=1,
+            pulse_train_count=1
+        )
+
+        solution = Solution(
+            id="solution",
+            name="Solution",
+            protocol_id="example_protocol",
+            transducer_id="example_transducer",
+            delays = np.zeros((1,64)),
+            apodizations = np.ones((1,64)),
+            pulse = pulse,
+            sequence = sequence,
+            target=pt,
+            foci=[pt],
+            approved=True
+        )
+
+        sol_dict = solution.to_dict()
+        profile_index = 1
+        profile_increment = True
+        print("Set Solution")
+        ret_status = self.interface.txdevice.set_solution(
+            pulse = sol_dict['pulse'],
+            delays = sol_dict['delays'],
+            apodizations= sol_dict['apodizations'],
+            sequence= sol_dict['sequence'],
+            mode = "continuous",
+            profile_index=profile_index,
+            profile_increment=profile_increment
+        )
+
+        self._txconfigured_state = True
+        self.txConfigStateChanged.emit(self._txconfigured_state)
+        return True
+
     @pyqtSlot()
     def reset_configuration(self):
         """Reset system configuration to defaults."""
@@ -253,6 +299,11 @@ class LIFUConnector(QObject):
     def state(self):
         """Expose state as a QML property."""
         return self._state
+    
+    @pyqtProperty(bool, notify=triggerStateChanged)
+    def triggerEnabled(self):
+        """Expose trigger enabled status to QML."""
+        return self._trigger_state
     
     @pyqtSlot()
     def queryHvInfo(self):
