@@ -202,7 +202,8 @@ Rectangle {
                                     }
                                 }
 
-                                onClicked: {
+                                onClicked: {                                  
+                                    pingResult.text = ""
                                     if(LIFUConnector.sendPingCommand("HV")){                                        
                                         pingResult.text = "Ping SUCCESS"
                                         pingResult.color = "green"
@@ -257,6 +258,7 @@ Rectangle {
                                 }
 
                                 onClicked: {
+                                    toggleLedResult.text = ""
                                     if(LIFUConnector.sendLedToggleCommand("HV"))
                                     {
                                         toggleLedResult.text = "LED Toggled"
@@ -310,7 +312,7 @@ Rectangle {
                                 }
 
                                 onClicked: {
-
+                                    echoResult.text = ""
                                     if(LIFUConnector.sendEchoCommand("HV"))
                                     {
                                         echoResult.text = "Echo SUCCESS"
