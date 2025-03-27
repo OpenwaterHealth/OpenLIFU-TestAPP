@@ -168,7 +168,7 @@ class LIFUConnector(QObject):
     def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ):
         """Simulate configuring the transmitter."""
         if self._txConnected:
-            pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=2e-5)
+            pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=400e-6)
             pt = Point(position=(int(xInput),int(yInput),int(zInput)), units="mm")
             sequence = Sequence(
                 pulse_interval=0.1,
