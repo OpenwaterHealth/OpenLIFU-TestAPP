@@ -104,6 +104,11 @@ Rectangle {
                         text: "Configure"
                         Layout.fillWidth: true
                         enabled: LIFUConnector.state === 1  // TX_CONNECTED
+                        background: Rectangle {
+                            color: "#3A3F4B"
+                            radius: 4
+                            border.color: "#BDC3C7"
+                        }
                         onClicked: {
                             console.log("Configuring transmitter...");
                             LIFUConnector.configure_transmitter(xInput.text, yInput.text, 
@@ -120,6 +125,11 @@ Rectangle {
                         text: "Start"
                         Layout.fillWidth: true
                         enabled: LIFUConnector.state === 3  // READY
+                        background: Rectangle {
+                            color: "#3A3F4B"
+                            radius: 4
+                            border.color: "#BDC3C7"
+                        }
                         onClicked: {
                             console.log("Starting Sonication...");
                             LIFUConnector.start_sonication();
@@ -130,6 +140,11 @@ Rectangle {
                         text: "Stop"
                         Layout.fillWidth: true
                         enabled: LIFUConnector.state === 4  // RUNNING
+                        background: Rectangle {
+                            color: "#3A3F4B"
+                            radius: 4
+                            border.color: "#BDC3C7"
+                        }
                         onClicked: {
                             console.log("Stopping Sonication...");
                             LIFUConnector.stop_sonication();
@@ -140,6 +155,11 @@ Rectangle {
                         text: "Reset"
                         Layout.fillWidth: true
                         enabled: (LIFUConnector.state > 1 && LIFUConnector.state != 4)  // CONFIGURED
+                        background: Rectangle {
+                            color: "#3A3F4B"
+                            radius: 4
+                            border.color: "#BDC3C7"
+                        }
                         onClicked: {
                             console.log("Resetting parameters...");
                             xInput.text = "0";

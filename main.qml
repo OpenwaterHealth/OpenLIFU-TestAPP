@@ -5,7 +5,6 @@ import QtQuick.Controls 6.0
 import QtQuick.Layouts 6.0
 
 import "components"
-import "pages"
 
 
 Window {
@@ -72,7 +71,7 @@ Window {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     source: activeMenu === 0 ? "pages/Demo.qml"
-                        : activeMenu === 1 ? "pages/Test.qml"
+                        : activeMenu === 1 ? "pages/Transmitter.qml"
                         : activeMenu === 2 ? "pages/Console.qml"
                         : "pages/Settings.qml"
 
