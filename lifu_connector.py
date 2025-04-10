@@ -169,7 +169,7 @@ class LIFUConnector(QObject):
         """Simulate configuring the transmitter."""
         if self._txConnected:
             pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=400e-6)
-            pt = Point(position=(int(xInput),int(yInput),int(zInput)), units="mm")
+            pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
             sequence = Sequence(
                 pulse_interval=0.1,
                 pulse_count=10,
