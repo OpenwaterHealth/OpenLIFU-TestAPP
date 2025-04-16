@@ -56,13 +56,13 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Left (X):"; color: "white" }
-                        TextField { id: xInput; text: "0" }
+                        TextField { id: xInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
 
                         Text { text: "Front (Y):"; color: "white" }
-                        TextField { id: yInput; text: "0" }
+                        TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
 
                         Text { text: "Down (Z):"; color: "white" }
-                        TextField { id: zInput; text: "25" }
+                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
                     }
                 }
 
@@ -75,7 +75,7 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Voltage (+/-):"; color: "white" }
-                        TextField { id: voltage; text: "12.0" }
+                        TextField { id: voltage; Layout.preferredHeight: 32; font.pixelSize: 14; text: "12.0" }
                     }
                 }
 
@@ -88,10 +88,13 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Frequency (Hz):"; color: "white" }
-                        TextField { id: frequencyInput; text: "400e3" }
+                        TextField { id: frequencyInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "400e3" }
+
+                        Text { text: "Duration (S):"; color: "white" }
+                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-5" }
 
                         Text { text: "Trigger (Hz):"; color: "white" }
-                        TextField { id: triggerInput; text: "10" }
+                        TextField { id: triggerInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
                     }
                 }
 
@@ -112,7 +115,7 @@ Rectangle {
                         onClicked: {
                             console.log("Configuring transmitter...");
                             LIFUConnector.configure_transmitter(xInput.text, yInput.text, 
-                                zInput.text,  frequencyInput.text, voltage.text, triggerInput.text);
+                                zInput.text,  frequencyInput.text, voltage.text, triggerInput.text, durationInput.text);
                             LIFUConnector.generate_plot(
                                  xInput.text, yInput.text, zInput.text,
                                  frequencyInput.text, "100", triggerInput.text,
