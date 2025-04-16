@@ -164,11 +164,11 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error generating plot: {e}")
 
-    @pyqtSlot(str, str, str, str, str, str )
-    def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ):
+    @pyqtSlot(str, str, str, str, str, str, str)
+    def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ, durationS):
         """Simulate configuring the transmitter."""
         if self._txConnected:
-            pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=400e-6)
+            pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=float(durationS))
             pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
             sequence = Sequence(
                 pulse_interval=0.1,
