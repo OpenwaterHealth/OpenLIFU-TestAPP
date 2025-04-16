@@ -15,31 +15,27 @@ Rectangle {
     // Properties for dynamic data
     property string firmwareVersion: "N/A"
     property string deviceId: "N/A"
-    property real temperature1: 0.0
-    property real temperature2: 0.0
-    property string rgbState: "Off" // Add property for RGB state
-    property string hvState: "Off" // Add property for HV state
-    property string v12State: "Off" // Add property for 12V state
+    property real tx_temperature: 0.0
+    property real amb_temperature: 0.0
 
     function updateStates() {
         console.log("Updating all states...")
-        LIFUConnector.queryHvInfo()
-        LIFUConnector.queryHvTemperature()
-        LIFUConnector.queryPowerStatus() // Query power status
-        LIFUConnector.queryRGBState() // Query RGB state
+        LIFUConnector.queryTxInfo()
+        LIFUConnector.queryTxTemperature()
+        LIFUConnector.queryTriggerInfo()
     }
 
-    // Run refresh logic immediately on page load if HV is already connected
+    // Run refresh logic immediately on page load if TX is already connected
     Component.onCompleted: {
-        if (LIFUConnector.hvConnected) {
-            console.log("Page Loaded - HV Already Connected. Fetching Info...")
+        if (LIFUConnector.txConnected) {
+            console.log("Page Loaded - TX Already Connected. Fetching Info...")
             updateStates()
         }
     }
 
     Timer {
         id: infoTimer
-        interval: 500   // Delay to ensure HV is stable before fetching info
+        interval: 1500   // Delay to ensure TX is stable before fetching info
         running: false
         onTriggered: {
             console.log("Fetching Firmware Version and Device ID...")
@@ -50,58 +46,43 @@ Rectangle {
     Connections {
         target: LIFUConnector
 
-        // Handle HV Connected state
-        function onHvConnectedChanged() {
-            if (LIFUConnector.hvConnected) {
+        // Handle TX Connected state
+        onTxConnectedChanged: {
+            if (LIFUConnector.txConnected) {
                 infoTimer.start()          // One-time info fetch
             } else {
-                console.log("HV Disconnected - Clearing Data...")
+                console.log("TX Disconnected - Clearing Data...")
                 firmwareVersion = "N/A"
                 deviceId = "N/A"
-                temperature1 = 0.0
-                temperature2 = 0.0
-                rgbState = "Off" // Reset RGB state
-                voltageState = "Off" // Reset voltage state
+                tx_temperature = 0.0
+                amb_temperature = 0.0
+                
                 pingResult.text = ""
                 echoResult.text = ""
                 toggleLedResult.text = ""
-                rgbLedResult.text = ""
-
             }
         }
 
         // Handle device info response
-        function onHvDeviceInfoReceived(fwVersion, devId) {
+        onTxDeviceInfoReceived: (fwVersion, devId) => {
             firmwareVersion = fwVersion
             deviceId = devId
         }
 
         // Handle temperature updates
-        function onTemperatureHvUpdated(temp1, temp2) {
-            temperature1 = temp1
-            temperature2 = temp2
+        onTemperatureTxUpdated: (tx_temp, amb_temp) => {
+            tx_temperature = tx_temp
+            amb_temperature = amb_temp
         }
 
-        // Handle voltage state updates
-        function onPowerStatusReceived(v12_state, hv_state) {
-            if(hv_state)
-                hvState = "On"
-            else
-                hvState = "Off"
-
-            if(v12_state)
-                v12State = "On"
-            else
-                v12State = "Off"
-
-            hvStatus.text = hvState // Update the UI with the new voltage state
-            v12Status.text = v12State
+        onTriggerStateChanged: (state) => {
+            triggerStatus.text = state ? "On" : "Off";
+            triggerStatus.color = state ? "green" : "red";
         }
 
-        function onRgbStateReceived(stateValue, stateText) {
-            rgbState = stateText
-            rgbLedResult.text = stateText  // Display the state as text
-            rgbLedDropdown.currentIndex = stateValue  // Sync ComboBox to received state
+        onTxConfigStateChanged: (state) => {
+            txconfigStatus.text = state ? "Configured" : "NOT Configured";
+            txconfigStatus.color = state ? "green" : "red";
         }
     }
 
@@ -112,7 +93,7 @@ Rectangle {
 
         // Title
         Text {
-            text: "LIFU Console Unit Tests"
+            text: "LIFU Transmitter Unit Tests"
             font.pixelSize: 18
             font.weight: Font.Bold
             color: "white"
@@ -176,7 +157,7 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected 
+                                enabled: LIFUConnector.txConnected 
 
                                 contentItem: Text {
                                     text: parent.text
@@ -202,9 +183,8 @@ Rectangle {
                                     }
                                 }
 
-                                onClicked: {                                  
-                                    pingResult.text = ""
-                                    if(LIFUConnector.sendPingCommand("HV")){                                        
+                                onClicked: {
+                                    if(LIFUConnector.sendPingCommand("TX")){                                        
                                         pingResult.text = "Ping SUCCESS"
                                         pingResult.color = "green"
                                     }else{
@@ -231,7 +211,7 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected 
+                                enabled: LIFUConnector.txConnected 
 
                                 contentItem: Text {
                                     text: parent.text
@@ -258,8 +238,7 @@ Rectangle {
                                 }
 
                                 onClicked: {
-                                    toggleLedResult.text = ""
-                                    if(LIFUConnector.sendLedToggleCommand("HV"))
+                                    if(LIFUConnector.sendLedToggleCommand("TX"))
                                     {
                                         toggleLedResult.text = "LED Toggled"
                                         toggleLedResult.color = "green"
@@ -285,7 +264,7 @@ Rectangle {
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected 
+                                enabled: LIFUConnector.txConnected 
 
                                 contentItem: Text {
                                     text: parent.text
@@ -312,8 +291,8 @@ Rectangle {
                                 }
 
                                 onClicked: {
-                                    echoResult.text = ""
-                                    if(LIFUConnector.sendEchoCommand("HV"))
+
+                                    if(LIFUConnector.sendEchoCommand("TX"))
                                     {
                                         echoResult.text = "Echo SUCCESS"
                                         echoResult.color = "green"
@@ -336,40 +315,29 @@ Rectangle {
                                 Layout.preferredWidth: 200 
                             }
 
-                            ComboBox {
-                                id: rgbLedDropdown
-                                Layout.preferredWidth: 120
-                                Layout.preferredHeight: 40
-                                model: ["Off", "Red", "Green", "Blue"]
-                                enabled: LIFUConnector.hvConnected 
-
-                                onActivated: {
-                                    let rgbValue = rgbLedDropdown.currentIndex  // Directly map ComboBox index to integer value
-                                    LIFUConnector.setRGBState(rgbValue)         // Assuming you implement this new method
-                                    rgbLedResult.text = rgbLedDropdown.currentText
-                                }
+                            Item {
+                                
                             }
-                            Text {
-                                id: rgbLedResult
-                                Layout.preferredWidth: 80
-                                color: "#BDC3C7"
-                                text: "Off"
+                            
+
+                            Item {
+                                
                             }
                         }
                     }
-
-                    // Power Tests Box
+                    
+                    // Trigger Tests
                     Rectangle {
                         width: 650
-                        height: 195
-                        radius: 8
+                        height: 390
+                        radius: 6
                         color: "#1E1E20"
                         border.color: "#3E4E6F"
                         border.width: 2
 
                         // Title at Top-Center with 5px Spacing
                         Text {
-                            text: "Power Tests"
+                            text: "Trigger and TX Output Tests"
                             color: "#BDC3C7"
                             font.pixelSize: 18
                             anchors.top: parent.top
@@ -388,50 +356,81 @@ Rectangle {
                             rowSpacing: 10
                             columnSpacing: 10
 
-
                             Text {
-                                Layout.preferredWidth: 80
+                                Layout.preferredWidth: 100
                                 font.pixelSize: 16
-                                text: "Set HV (+/-)"
+                                text: "Trigger Pulse"
                                 color: "#BDC3C7"
                                 Layout.alignment: Qt.AlignVCenter
                             }
 
                             ComboBox {
-                                id: hvDropdown
-                                Layout.preferredWidth: 120
+                                id: triggerDropdown
+                                Layout.preferredWidth: 200
                                 Layout.preferredHeight: 40
-                                model: ["-", "10", "25", "50", "100"]
-                                enabled: LIFUConnector.hvConnected 
+                                model: ["10Hz 20ms Pulse", "20Hz 10ms Pulse", "40Hz 5ms Pulse"]
+                                enabled: LIFUConnector.txConnected
 
                                 onActivated: {
-                                    var selectedValue = hvDropdown.currentText;
+                                    var selectedIndex = triggerDropdown.currentIndex;
 
-                                    if (selectedValue !== "-") {
-                                        var success = LIFUConnector.setHVCommand(selectedValue);
-                                        if (success) {
-                                            console.log("Voltage set successfully");
-                                        }  else {
-                                            console.log("Failed to set voltage. Resetting ComboBox to '-'");
-                                            // Reset the ComboBox to "-"
-                                            hvDropdown.currentIndex = 0; // Index 0 corresponds to "-"
-                                        }
+                                    // Define the JSON object
+                                    var json_trigger_data = {
+                                        "TriggerFrequencyHz": 0, // Will be updated based on the index
+                                        "TriggerPulseCount": 0,
+                                        "TriggerPulseWidthUsec": 0, // Will be updated based on the index
+                                        "TriggerPulseTrainInterval": 0,
+                                        "TriggerPulseTrainCount": 0,
+                                        "TriggerMode": 1,
+                                        "ProfileIndex": 0,
+                                        "ProfileIncrement": 0
+                                    };
+
+                                    // Update frequency and pulse width based on the selected index
+                                    switch (selectedIndex) {
+                                        case 0: // 10Hz 20ms Pulse
+                                            json_trigger_data.TriggerFrequencyHz = 10;
+                                            json_trigger_data.TriggerPulseWidthUsec = 20000;
+                                            break;
+                                        case 1: // 20Hz 10ms Pulse
+                                            json_trigger_data.TriggerFrequencyHz = 20;
+                                            json_trigger_data.TriggerPulseWidthUsec = 10000;
+                                            break;
+                                        case 2: // 40Hz 5ms Pulse
+                                            json_trigger_data.TriggerFrequencyHz = 40;
+                                            json_trigger_data.TriggerPulseWidthUsec = 5000;
+                                            break;
+                                        default:
+                                            console.log("Invalid selection");
+                                            return;
                                     }
+
+                                    // Convert the object to a JSON string
+                                    var jsonString = JSON.stringify(json_trigger_data);
+
+                                    // Call your function with the selected index
+                                    var success = LIFUConnector.setTrigger(jsonString);
+                                    if (success) {
+                                        console.log("JSON data sent successfully");
+                                    } else {
+                                        console.log("Failed to send JSON data");
+                                    }
+
                                 }
                             }
 
                             Item {
-                                Layout.preferredWidth: 200
+                                Layout.preferredWidth: 100
                             }
 
 
                             Button {
-                                id: v12Enable
-                                text: "12V Enable"
+                                id: triggerEnable
+                                text: "Toggle Trigger"
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected 
+                                enabled: LIFUConnector.txConnected 
 
                                 contentItem: Text {
                                     text: parent.text
@@ -441,7 +440,7 @@ Rectangle {
                                 }
 
                                 background: Rectangle {
-                                    id: v12EnableButtonBackground
+                                    id: triggerButtonBackground
                                     color: {
                                         if (!parent.enabled) {
                                             return "#3A3F4B";  // Disabled color
@@ -458,35 +457,58 @@ Rectangle {
                                 }
 
                                 onClicked: {
-                                    LIFUConnector.toggleV12() // Toggle the HV state
+                                    // Toggle the trigger state
+                                    var success = LIFUConnector.toggleTrigger();
+                                    if (success) {
+                                        console.log("Trigger toggled successfully.");
+                                    } else {
+                                        console.log("Failed to toggle trigger.");
+                                    }
                                 }
 
                             }
+
                             Text {
-                                id: v12Status
+                                id: triggerStatus
                                 Layout.preferredWidth: 80
+                                text: ""
                                 color: "#BDC3C7"
-                                text: "Off"
+                            }
+                            
+                            Text {
+                                Layout.preferredWidth: 100
+                                font.pixelSize: 16
+                                text: "TX Config"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
                             }
 
-
-                            Item {
-                            }
-
-                            Item {
-                            }
-
-                            Item {
+                            ComboBox {
+                                id: txconfigDropdown
                                 Layout.preferredWidth: 200
+                                Layout.preferredHeight: 40
+                                model: ["100KHz", "200KHz", "400KHz"]
+                                enabled: LIFUConnector.txConnected
+
+                                onActivated: {
+                                    if(LIFUConnector.triggerEnabled){
+                                        LIFUConnector.toggleTrigger();
+                                        txconfigStatus.text = ""
+                                    }
+                                }
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 100
                             }
 
                             Button {
-                                id: hvEnable
-                                text: "HV Enable"
+                                id: setTxConfig
+                                text: "Set TX Config"
                                 Layout.preferredWidth: 80
                                 Layout.preferredHeight: 50
                                 hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected && hvDropdown.currentText !== "-"  // Enable button only if a valid value is selected
+                                enabled: LIFUConnector.txConnected 
 
                                 contentItem: Text {
                                     text: parent.text
@@ -496,7 +518,7 @@ Rectangle {
                                 }
 
                                 background: Rectangle {
-                                    id: hvEnableButtonBackground
+                                    id: setTxConfigBackground
                                     color: {
                                         if (!parent.enabled) {
                                             return "#3A3F4B";  // Disabled color
@@ -513,132 +535,50 @@ Rectangle {
                                 }
 
                                 onClicked: {
-                                    LIFUConnector.toggleHV() // Toggle the HV state
+                                    // Set configuration of transmitter
+                                    
+                                    if(LIFUConnector.triggerEnabled){
+                                        LIFUConnector.toggleTrigger();
+                                    }
+                                    txconfigStatus.text = ""
+                                    var selectedIndex = txconfigDropdown.currentIndex;
+                                    let frequency = 400000
+                                    let pulse_count = 5
+
+                                    // Update frequency and pulse width based on the selected index
+                                    switch (selectedIndex) {
+                                        case 0: // 100KHz 
+                                            frequency = 100000
+                                            pulse_count = 10
+                                            break;
+                                        case 1: // 200KHz 
+                                            frequency = 200000
+                                            pulse_count = 10
+                                            break;
+                                        case 2: // 400KHz 
+                                            frequency = 400000
+                                            pulse_count = 10
+                                            break;
+                                        default:
+                                            console.log("Invalid selection");
+                                            return;
+                                    }
+
+                                    // Call your function with the selected index
+                                    LIFUConnector.setSimpleTxConfig(frequency, pulse_count);
                                 }
 
                             }
 
                             Text {
-                                id: hvStatus
+                                id: txconfigStatus
                                 Layout.preferredWidth: 80
+                                text: ""
                                 color: "#BDC3C7"
-                                text: LIFUConnector.hvState ? "On" : "Off" // Bind text to HV state
-                            }
-                        }
-                    }
-
-                    // Fan Tests Box
-                    Rectangle {
-                        width: 650
-                        height: 190
-                        radius: 8
-                        color: "#1E1E20"
-                        border.color: "#3E4E6F"
-                        border.width: 2
-
-                        // Title at Top-Center with 5px Spacing
-                        Text {
-                            text: "Fan Tests"
-                            color: "#BDC3C7"
-                            font.pixelSize: 18
-                            anchors.top: parent.top
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.topMargin: 5  // 5px spacing from the top
-                        }
-
-                        // Slider for Top Fan
-                        Column {
-                            anchors.top: parent.top
-                            anchors.topMargin: 40  // Adjust spacing as needed
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            spacing: 5
-
-                            Text {
-                                text: "Top Fan: " + (topFanSlider.value === 0 ? "OFF" : topFanSlider.value.toFixed(0) + "%")
-                                color: "#BDC3C7"
-                                font.pixelSize: 14
-                            }
-
-                            Slider {
-                                id: topFanSlider
-                                width: 600  // Adjust width as needed
-                                from: 0
-                                to: 100
-                                stepSize: 10   // Snap to increments of 10
-                                value: 0  // Default value is 0 (OFF)
-                                enabled: LIFUConnector.hvConnected
-
-                                property bool userIsSliding: false
-
-                                onPressedChanged: {
-                                    if (pressed) {
-                                        userIsSliding = true
-                                    } else if (!pressed && userIsSliding) {
-                                        // User has finished sliding
-                                        let snappedValue = Math.round(value / 10) * 10
-                                        value = snappedValue
-                                        console.log("Slider released at:", snappedValue)
-                                        userIsSliding = false
-                                        // Call the backend method with fan_id and speed
-                                        let fanId = 1; // Example fan ID (adjust as needed) TOP
-                                        let success = LIFUConnector.setFanLevel(fanId, snappedValue);
-                                        if (success) {
-                                            console.log("Fan speed set successfully");
-                                        } else {
-                                            console.log("Failed to set fan speed");
-                                        }
-                                    }
-                                }
                             }
                         }
 
-                        // Slider for Bottom Fan
-                        Column {
-                            anchors.top: parent.top
-                            anchors.topMargin: 110  // Adjust spacing as needed
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            spacing: 5
-                            enabled: LIFUConnector.hvConnected
-
-                            Text {
-                                text: "Bottom Fan: " + (bottomFanSlider.value === 0 ? "OFF" : bottomFanSlider.value.toFixed(0) + "%")
-                                color: "#BDC3C7"
-                                font.pixelSize: 14
-                            }
-
-                            Slider {
-                                id: bottomFanSlider
-                                width: 600  // Adjust width as needed
-                                from: 0
-                                to: 100
-                                stepSize: 10   // Snap to increments of 10
-                                value: 0  // Default value is 0 (OFF)
-
-
-                                property bool userIsSliding: false
-
-                                onPressedChanged: {
-                                    if (pressed) {
-                                        userIsSliding = true
-                                    } else if (!pressed && userIsSliding) {
-                                        // User has finished sliding
-                                        let snappedValue = Math.round(value / 10) * 10
-                                        value = snappedValue
-                                        console.log("Slider released at:", snappedValue)
-                                        userIsSliding = false
-                                        // Call the backend method with fan_id and speed
-                                        let fanId = 0; // Example fan ID (adjust as needed) Bottom
-                                        let success = LIFUConnector.setFanLevel(fanId, snappedValue);
-                                        if (success) {
-                                            console.log("Fan speed set successfully");
-                                        } else {
-                                            console.log("Failed to set fan speed");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    }                    
                 }
 
                 // Large Third Column
@@ -655,23 +595,23 @@ Rectangle {
                         anchors.margins: 20
                         spacing: 10
 
-                        // HV Status Indicator
+                        // TX Status Indicator
                         RowLayout {
                             spacing: 8
 
-                            Text { text: "HV"; font.pixelSize: 16; color: "#BDC3C7" }
+                            Text { text: "TX"; font.pixelSize: 16; color: "#BDC3C7" }
                         
                             Rectangle {
                                 width: 20
                                 height: 20
                                 radius: 10
-                                color: LIFUConnector.hvConnected ? "green" : "red"
+                                color: LIFUConnector.txConnected ? "green" : "red"
                                 border.color: "black"
                                 border.width: 1
                             }
 
                             Text {
-                                text: LIFUConnector.hvConnected ? "Connected" : "Not Connected"
+                                text: LIFUConnector.txConnected ? "Connected" : "Not Connected"
                                 font.pixelSize: 16
                                 color: "#BDC3C7"
                             }
@@ -681,6 +621,7 @@ Rectangle {
                                 Layout.fillWidth: true
                             }
 
+                            
                             // Refresh Button
                             Rectangle {
                                 width: 30
@@ -688,7 +629,7 @@ Rectangle {
                                 radius: 15
                                 color: enabled ? "#2C3E50" : "#7F8C8D"  // Dim when disabled
                                 Layout.alignment: Qt.AlignRight  
-                                enabled: LIFUConnector.hvConnected
+                                enabled: LIFUConnector.txConnected
 
                                 // Icon Text
                                 Text {
@@ -704,8 +645,7 @@ Rectangle {
                                     enabled: parent.enabled  // MouseArea also disabled when button is disabled
                                     onClicked: {
                                         console.log("Manual Refresh Triggered")
-                                        LIFUConnector.queryHvInfo()
-                                        LIFUConnector.queryHvTemperature()
+                                        updateStates();
                                     }
 
                                     onEntered: if (parent.enabled) parent.color = "#34495E"  // Highlight only when enabled
@@ -713,7 +653,6 @@ Rectangle {
                                 }
                             }
                         }
-
                         // Divider Line
                         Rectangle {
                             Layout.fillWidth: true
@@ -743,19 +682,20 @@ Rectangle {
                             // TEMP #1 Widget
                             TemperatureWidget {
                                 id: tempWidget1
-                                temperature: temperature1
-                                tempName: "Temperature #1"
+                                temperature: tx_temperature
+                                tempName: "TX Temperature"
                                 Layout.alignment: Qt.AlignHCenter
                             }
 
                             // TEMP #2 Widget
                             TemperatureWidget {
                                 id: tempWidget2
-                                temperature: temperature2
-                                tempName: "Temperature #2"
+                                temperature: amb_temperature
+                                tempName: "Amb Temperature"
                                 Layout.alignment: Qt.AlignHCenter
                             }
                         }
+
 
                         // Soft Reset Button
                         Rectangle {
@@ -763,7 +703,7 @@ Rectangle {
                             height: 40
                             radius: 10
                             color: enabled ? "#E74C3C" : "#7F8C8D"  // Red when enabled, gray when disabled
-                            enabled: LIFUConnector.hvConnected  // Enable/disable based on HV connection
+                            enabled: LIFUConnector.txConnected
 
                             Text {
                                 text: "Soft Reset"
@@ -778,7 +718,7 @@ Rectangle {
                                 enabled: parent.enabled  // Disable MouseArea when the button is disabled
                                 onClicked: {
                                     console.log("Soft Reset Triggered")
-                                    LIFUConnector.softResetHV()
+                                    LIFUConnector.softResetTX()
                                 }
 
                                 onEntered: {

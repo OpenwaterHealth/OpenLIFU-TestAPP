@@ -3,17 +3,33 @@ import os
 import asyncio
 import warnings
 import logging
+import argparse
 from PyQt6.QtGui import QGuiApplication, QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 from qasync import QEventLoop
 from lifu_connector import LIFUConnector
+
+# run with lab supply
+# python your_script.py --hv-test-mode 
 
 logger = logging.getLogger(__name__)
 
 # Suppress PyQt6 DeprecationWarnings related to SIP
 warnings.simplefilter("ignore", DeprecationWarning)
 
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="LIFU Application")
+    parser.add_argument(
+        "--hv-test-mode",
+        action="store_true",
+        help="Enable HV test mode for LIFUConnector",
+    )
+    return parser.parse_args()
+
 def main():
+    args = parse_arguments()
+
     os.environ["QT_QUICK_CONTROLS_STYLE"] = "Material"
     os.environ["QT_QUICK_CONTROLS_MATERIAL_THEME"] = "Dark"
 
@@ -22,8 +38,8 @@ def main():
 
     engine = QQmlApplicationEngine()
 
-    # Initialize LIFUConnector
-    lifu_connector = LIFUConnector()
+    # Initialize LIFUConnector with hv_test_mode from command-line argument
+    lifu_connector = LIFUConnector(hv_test_mode=args.hv_test_mode)
     
     # Expose to QML
     engine.rootContext().setContextProperty("LIFUConnector", lifu_connector)
