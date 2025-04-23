@@ -365,7 +365,7 @@ class LIFUConnector(QObject):
                 logger.error(f"Invalid RGB state value: {state}")
                 return
 
-            if self.interface.hvcontroller.set_rgb_led(state):
+            if self.interface.hvcontroller.set_rgb_led(state) == state:
                 logger.info(f"RGB state set to: {state}")
             else:
                 logger.error(f"Failed to set RGB state to: {state}")
