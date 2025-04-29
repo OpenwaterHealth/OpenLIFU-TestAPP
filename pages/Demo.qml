@@ -62,7 +62,7 @@ Rectangle {
                         TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
 
                         Text { text: "Down (Z):"; color: "white" }
-                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
+                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "50" }
                     }
                 }
 
@@ -91,7 +91,7 @@ Rectangle {
                         TextField { id: frequencyInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "400e3" }
 
                         Text { text: "Duration (S):"; color: "white" }
-                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-5" }
+                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "4e-5" }
 
                         Text { text: "Trigger (Hz):"; color: "white" }
                         TextField { id: triggerInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
@@ -167,8 +167,7 @@ Rectangle {
                             console.log("Resetting parameters...");
                             xInput.text = "0";
                             yInput.text = "0";
-                            zInput.text = "25";
-                            frequencyInput.text = "400e3";
+                            zInput.text = "50";
                             voltage.text = "12.0";
                             triggerInput.text = "10";
                             LIFUConnector.reset_configuration();

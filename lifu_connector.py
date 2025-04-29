@@ -170,8 +170,10 @@ class LIFUConnector(QObject):
         if self._txConnected:
             pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=float(durationS))
             pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
+            trigger_freq = float(triggerHZ)
+            trigger_interval = 1 / trigger_freq if trigger_freq > 0 else 1
             sequence = Sequence(
-                pulse_interval=0.1,
+                pulse_interval=trigger_interval,
                 pulse_count=10,
                 pulse_train_interval=1,
                 pulse_train_count=1
