@@ -170,11 +170,9 @@ class LIFUConnector(QObject):
         if self._txConnected:
             pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=float(durationS))
             pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
-            trigger_freq = float(triggerHZ)
-            trigger_interval = 1 / trigger_freq if trigger_freq > 0 else 0.01
             sequence = Sequence(
-                pulse_interval=trigger_interval,
-                pulse_count=10,
+                pulse_interval=1.0/float(triggerHZ),
+                pulse_count=1,
                 pulse_train_interval=1,
                 pulse_train_count=1
             )
@@ -202,10 +200,10 @@ class LIFUConnector(QObject):
         
     @pyqtSlot(int, int, result=bool)
     def setSimpleTxConfig(self, freq: float, pulses: int):
-        pulse = Pulse(frequency=freq, amplitude=10.0, duration=2e-5)
+        pulse = Pulse(frequency=freq, amplitude=10.0, duration=2e-4)
         pt = Point(position=(0, 0, 50), units="mm")
         sequence = Sequence(
-            pulse_interval=0.1,
+            pulse_interval=0.01,
             pulse_count=pulses,
             pulse_train_interval=1,
             pulse_train_count=1
@@ -228,16 +226,8 @@ class LIFUConnector(QObject):
         sol_dict = solution.to_dict()
         profile_index = 1
         profile_increment = True
-        print("Set Solution")
-        ret_status = self.interface.txdevice.set_solution(
-            pulse = sol_dict['pulse'],
-            delays = sol_dict['delays'],
-            apodizations= sol_dict['apodizations'],
-            sequence= sol_dict['sequence'],
-            mode = "continuous",
-            profile_index=profile_index,
-            profile_increment=profile_increment
-        )
+        logger.error(f">>>>>>>>>>>>>>>>>>> Set Solution {solution}")
+        ret_status = self.interface.set_solution(solution = solution)
 
         self._txconfigured_state = True
         self.txConfigStateChanged.emit(self._txconfigured_state)
