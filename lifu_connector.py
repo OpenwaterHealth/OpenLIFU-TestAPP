@@ -9,6 +9,7 @@ from openlifu.bf.pulse import Pulse
 from openlifu.bf.sequence import Sequence
 from openlifu.geo import Point
 from openlifu.plan.solution import Solution
+from openlifu.xdc import Transducer
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +171,15 @@ class LIFUConnector(QObject):
         if self._txConnected:
             pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=float(durationS))
             pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
+            
+            arr = Transducer.from_file(R".\pinmap.json")
+            focus = pt.get_position(units="mm")
+
+            distances = np.sqrt(np.sum((focus - arr.get_positions(units="mm"))**2, 1))
+            tof = distances*1e-3 / 1500
+            delays = tof.max() - tof
+            apodizations = np.ones(arr.numelements())
+            
             sequence = Sequence(
                 pulse_interval=1.0/float(triggerHZ),
                 pulse_count=1,
@@ -182,8 +192,8 @@ class LIFUConnector(QObject):
                 name="Solution",
                 protocol_id="example_protocol",
                 transducer_id="example_transducer",
-                delays = np.zeros((1,64)),
-                apodizations = np.ones((1,64)),
+                delays = delays,
+                apodizations = apodizations,
                 pulse = pulse,
                 sequence = sequence,
                 target=pt,
