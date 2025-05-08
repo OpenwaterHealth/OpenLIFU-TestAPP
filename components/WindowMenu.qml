@@ -12,6 +12,7 @@ Rectangle {
     // Properties to configure the title and logo
     property string titleText: "Default Title" // Default title
     property string logoSource: "" // Default to no logo
+    property string versionText: "v0.0.0" // Default
 
     // Drag functionality
     MouseArea {
@@ -51,14 +52,29 @@ Rectangle {
             Layout.fillWidth: true
         }
 
-        // Title
-        Text {
-            text: windowMenu.titleText // Use the configurable title text
-            color: "white"
-            font.pixelSize: 24
-            font.weight: Font.Bold // Make the text bold
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
+        // Title and Version Container
+        RowLayout {
+            spacing: 8
+            Layout.alignment: Qt.AlignHCenter
+
+            // Title
+            Text {
+                text: windowMenu.titleText // Use the configurable title text
+                color: "white"
+                font.pixelSize: 24
+                font.weight: Font.Bold // Make the text bold
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+            }
+
+            // Version
+            Text {
+                text: windowMenu.versionText
+                color: "#AAAAAA" // Slightly dimmed color
+                font.pixelSize: 14 // Smaller than title
+                topPadding: 4 // Slight vertical adjustment
+                font.weight: Font.Medium
+            }
         }
 
         // Spacer after title

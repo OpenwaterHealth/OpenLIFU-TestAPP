@@ -10,7 +10,8 @@ from qasync import QEventLoop
 from lifu_connector import LIFUConnector
 
 # run with lab supply
-# python your_script.py --hv-test-mode 
+# set PYTHONPATH=%cd%..\OpenLIFU-python\src;%PYTHONPATH%
+# python main.py --hv-test-mode 
 
 logger = logging.getLogger(__name__)
 

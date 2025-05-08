@@ -37,6 +37,7 @@ Window {
             // Set title and logo dynamically
             titleText: "Open-LIFU Engineering App"
             logoSource: "../assets/images/OpenwaterLogo.png" // Correct relative path
+            versionText: "v1.0.9" 
         }
 
         // Layout for Sidebar and Main Content
