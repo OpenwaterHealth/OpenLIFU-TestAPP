@@ -62,7 +62,7 @@ Rectangle {
                         TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
 
                         Text { text: "Down (Z):"; color: "white" }
-                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
+                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "50" }
                     }
                 }
 
@@ -75,7 +75,7 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Voltage (+/-):"; color: "white" }
-                        TextField { id: voltage; Layout.preferredHeight: 32; font.pixelSize: 14; text: "12.0" }
+                        TextField { id: voltage; Layout.preferredHeight: 32; font.pixelSize: 14; text: "50.0" }
                     }
                 }
 
@@ -88,13 +88,13 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Frequency (Hz):"; color: "white" }
-                        TextField { id: frequencyInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "400e3" }
+                        TextField { id: frequencyInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "405e3" }
 
                         Text { text: "Duration (S):"; color: "white" }
-                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-5" }
+                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-4" }
 
                         Text { text: "Trigger (Hz):"; color: "white" }
-                        TextField { id: triggerInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
+                        TextField { id: triggerInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "5" }
                     }
                 }
 
@@ -167,10 +167,10 @@ Rectangle {
                             console.log("Resetting parameters...");
                             xInput.text = "0";
                             yInput.text = "0";
-                            zInput.text = "25";
-                            frequencyInput.text = "400e3";
-                            voltage.text = "12.0";
-                            triggerInput.text = "10";
+                            zInput.text = "50";
+                            frequencyInput.text = "405e3";
+                            voltage.text = "50.0";
+                            triggerInput.text = "5";
                             LIFUConnector.reset_configuration();
                         }
                     }
