@@ -12,7 +12,8 @@ Rectangle {
     // Properties to configure the title and logo
     property string titleText: "Default Title" // Default title
     property string logoSource: "" // Default to no logo
-    property string versionText: "v0.0.0" // Default
+    property string appVerText: "v0.0.0" // Default
+    property string sdkVerText: "v0.0.0" // Default
 
     // Drag functionality
     MouseArea {
@@ -67,16 +68,31 @@ Rectangle {
                 horizontalAlignment: Text.AlignHCenter
             }
 
-            // Version
-            Text {
-                text: windowMenu.versionText
-                color: "#AAAAAA" // Slightly dimmed color
-                font.pixelSize: 14 // Smaller than title
-                topPadding: 4 // Slight vertical adjustment
-                font.weight: Font.Medium
+            // Version Info (App + SDK stacked vertically)
+            ColumnLayout {
+                spacing: 2
+                Layout.alignment: Qt.AlignVCenter
+
+                // App Version
+                Text {
+                    text: "APP: "+windowMenu.appVerText
+                    color: "#AAAAAA"
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                    horizontalAlignment: Text.AlignRight
+                }
+
+                // SDK Version
+                Text {
+                    text: "SDK: "+windowMenu.sdkVerText
+                    color: "#AAAAAA"
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                    horizontalAlignment: Text.AlignRight
+                }
             }
         }
-
+        
         // Spacer after title
         Item {
             Layout.fillWidth: true

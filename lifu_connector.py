@@ -661,3 +661,14 @@ class LIFUConnector(QObject):
                 logger.error(f"Failed to send Software Reset")
         except Exception as e:
             logger.error(f"Error Sending Software Reset: {e}")
+
+        
+    @pyqtProperty(str, constant=True)
+    def sdkVersion(self) -> str:
+        """Expose SDK version as a constant QML property."""
+        try:
+            # Attempt to get SDK version from LIFUInterface
+            return LIFUInterface.get_sdk_version()
+        except (AttributeError, NameError):
+            # Fallback to default version if the function doesn't exist
+            return "0.3.2"

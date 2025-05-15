@@ -44,6 +44,7 @@ def main():
     
     # Expose to QML
     engine.rootContext().setContextProperty("LIFUConnector", lifu_connector)
+    engine.rootContext().setContextProperty("appVersion", "1.0.9")
 
     engine.load("main.qml")
 
