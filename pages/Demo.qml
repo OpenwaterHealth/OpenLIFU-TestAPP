@@ -48,25 +48,6 @@ Rectangle {
                 spacing: 15
 
                 GroupBox {
-                    title: "Beam Focus"
-                    Layout.fillWidth: true
-
-                    GridLayout {
-                        columns: 2
-                        width: parent.width
-
-                        Text { text: "Left (X):"; color: "white" }
-                        TextField { id: xInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
-
-                        Text { text: "Front (Y):"; color: "white" }
-                        TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
-
-                        Text { text: "Down (Z):"; color: "white" }
-                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
-                    }
-                }
-
-                GroupBox {
                     title: "High Voltage"
                     Layout.fillWidth: true
 
@@ -92,9 +73,43 @@ Rectangle {
 
                         Text { text: "Duration (S):"; color: "white" }
                         TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-5" }
+                    }
+                }
+
+                GroupBox {
+                    title: "Trigger Profile"
+                    Layout.fillWidth: true
+
+                    GridLayout {
+                        columns: 2
+                        width: parent.width
 
                         Text { text: "Trigger (Hz):"; color: "white" }
-                        TextField { id: triggerInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
+                        TextField { id: triggerFrequencyHz; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
+
+                        Text { text: "Pulse Count:"; color: "white" }
+                        TextField { id: triggerPulseCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+
+                        Text { text: "Train Interval (uS):"; color: "white" }
+                        TextField { id: triggerPulseTrainInterval; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+
+                        Text { text: "Train Count:"; color: "white" }
+                        TextField { id: triggerPulseTrainCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+
+                        Text { text: "Trigger Mode:"; color: "white" }
+
+						ComboBox {
+							id: triggerModeDropdown
+							Layout.preferredWidth: 150
+							Layout.preferredHeight: 32
+							model: ["Sequence", "Continuous", "Single"]
+							
+							onActivated: {
+								var selectedIndex = triggerModeDropdown.currentIndex;
+								console.log("Selected " + selectedIndex);
+								
+							}
+						}
                     }
                 }
 
@@ -113,12 +128,25 @@ Rectangle {
                             border.color: "#BDC3C7"
                         }
                         onClicked: {
-                            console.log("Configuring transmitter...");
+                            
+                            console.log("Configuring transmitter with:");
+                            console.log("X:", xInput.text);
+                            console.log("Y:", yInput.text);
+                            console.log("Z:", zInput.text);
+                            console.log("Frequency:", frequencyInput.text);
+                            console.log("Voltage:", voltage.text);
+                            console.log("Trigger Frequency Hz:", triggerFrequencyHz.text);
+                            console.log("Trigger Pulse Count:", triggerPulseCount.text);
+                            console.log("Trigger Pulse Train Interval:", triggerPulseTrainInterval.text);
+                            console.log("Trigger Pulse Train Count:", triggerPulseTrainCount.text);
+                            console.log("Duration:", durationInput.text);
+                            console.log("Mode Selected:", triggerModeDropdown.currentIndex);
+
                             LIFUConnector.configure_transmitter(xInput.text, yInput.text, 
-                                zInput.text,  frequencyInput.text, voltage.text, triggerInput.text, durationInput.text);
+                                zInput.text,  frequencyInput.text, voltage.text, triggerFrequencyHz.text, triggerPulseCount.text, triggerPulseTrainInterval.text, triggerPulseTrainCount.text, durationInput.text);
                             LIFUConnector.generate_plot(
                                  xInput.text, yInput.text, zInput.text,
-                                 frequencyInput.text, "100", triggerInput.text,
+                                 frequencyInput.text, "100", triggerFrequencyHz.text,
                                  "buffer"
                             );
                         }
@@ -170,7 +198,7 @@ Rectangle {
                             zInput.text = "25";
                             frequencyInput.text = "400e3";
                             voltage.text = "12.0";
-                            triggerInput.text = "10";
+                            triggerFrequencyHz.text = "10";
                             LIFUConnector.reset_configuration();
                         }
                     }
@@ -213,11 +241,35 @@ Rectangle {
                 id: messagePanel
                 width: 500
                 height: 150
-                color: "#252525"
+                color: "#1E1E20"
                 radius: 10
                 border.color: "#3E4E6F"
                 border.width: 2
 
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 15
+
+                    GroupBox {
+                        title: "Beam Focus"
+                        Layout.fillWidth: true
+
+                        GridLayout {
+                            columns: 4
+                            width: parent.width
+
+                            Text { text: "Left (X):"; color: "white" }
+                            TextField { id: xInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
+
+                            Text { text: "Front (Y):"; color: "white" }
+                            TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
+
+                            Text { text: "Down (Z):"; color: "white" }
+                            TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
+                        }
+                    }
+                }
             }
 			// Status Panel (Connection Indicators)
             Rectangle {
