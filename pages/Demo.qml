@@ -90,7 +90,7 @@ Rectangle {
                         Text { text: "Pulse Count:"; color: "white" }
                         TextField { id: triggerPulseCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
 
-                        Text { text: "Train Interval (uS):"; color: "white" }
+                        Text { text: "Train Interval (S):"; color: "white" }
                         TextField { id: triggerPulseTrainInterval; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
 
                         Text { text: "Train Count:"; color: "white" }
@@ -358,6 +358,11 @@ Rectangle {
 
         function onSignalDataReceived(descriptor, message) {
             console.log("Data from " + descriptor + ": " + message);
+        }
+
+        onTriggerStateChanged: (state) => {
+            triggerStatus.text = state ? "On" : "Off";
+            triggerStatus.color = state ? "green" : "red";
         }
 
         function onPlotGenerated(imageData) {

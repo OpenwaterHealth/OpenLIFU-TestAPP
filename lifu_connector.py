@@ -2,6 +2,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 import logging
 import numpy as np
 import base58
+import re
 import json
 from scripts.generate_ultrasound_plot import generate_ultrasound_plot  # Import the function directly
 from openlifu.io.LIFUInterface import LIFUInterface
@@ -11,7 +12,21 @@ from openlifu.geo import Point
 from openlifu.plan.solution import Solution
 from openlifu.xdc import Transducer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("LIFUConnector")
+# Set up logging
+logger.setLevel(logging.DEBUG)
+logger.propagate = False
+
+# Create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# Create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Add formatter to ch
+ch.setFormatter(formatter)
+# Add ch to logger
+logger.addHandler(ch)
+
 
 # Define system states
 DISCONNECTED = 0
@@ -86,6 +101,59 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error updating trigger state: {e}")
 
+    @pyqtSlot(str, result=dict)
+    def parse_status_string(self, status_str):
+        result = {
+            "status": None,
+            "mode": None,
+            "pulse_train_percent": None,
+            "pulse_percent": None,
+            "temp_tx": None,
+            "temp_ambient": None
+        }
+
+        try:
+            # Match top-level fields
+            pattern = re.compile(
+                r"STATUS:(\w+),"
+                r"MODE:(\w+),"
+                r"PULSE_TRAIN:\[(\d+)/(\d+)\],"
+                r"PULSE:\[(\d+)/(\d+)\],"
+                r"TEMP_TX:([0-9.]+),"
+                r"TEMP_AMBIENT:([0-9.]+)"
+            )
+            match = pattern.match(status_str.strip())
+
+            if not match:
+                raise ValueError("Input string format is invalid.")
+
+            (
+                status,
+                mode,
+                pt_current, pt_total,
+                p_current, p_total,
+                temp_tx,
+                temp_ambient
+            ) = match.groups()
+
+            # Convert and compute percentages
+            pt_current = int(pt_current)
+            pt_total = int(pt_total)
+            p_current = int(p_current)
+            p_total = int(p_total)
+
+            result["status"] = status
+            result["mode"] = mode
+            result["pulse_train_percent"] = (pt_current / pt_total * 100) if pt_total > 0 else 0
+            result["pulse_percent"] = (p_current / p_total * 100) if p_total > 0 else 0
+            result["temp_tx"] = float(temp_tx)
+            result["temp_ambient"] = float(temp_ambient)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to parse status string: {e}")
+            return result
 
     @pyqtSlot()
     async def start_monitoring(self):
@@ -132,6 +200,19 @@ class LIFUConnector(QObject):
         """Handle incoming data from the LIFU device."""
         logger.info(f"Data received from {descriptor}: {message}")
         self.signalDataReceived.emit(descriptor, message)
+
+        if descriptor == "TX":
+            try:
+                parsed = self.parse_status_string(message)
+                if parsed["status"] in {"RUNNING", "STOPPED"}:
+                    # Update internal trigger state and notify QML
+                    if parsed["status"] == "STOPPED":
+                        logger.info("Trigger is stopped.")
+                        self._state = READY
+                        self.stateChanged.emit()
+
+            except Exception as e:
+                logger.error(f"Failed to parse and update trigger state: {e}")
 
     @pyqtSlot(str, float)
     def configureSolution(self, solutionName, amplitude):
