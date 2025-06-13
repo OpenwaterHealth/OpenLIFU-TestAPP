@@ -183,7 +183,7 @@ class LIFUConnector(QObject):
             sequence = Sequence(
                 pulse_interval=1.0/float(triggerHZ),
                 pulse_count=int(pulseCount),
-                pulse_train_interval=int(trainInterval),
+                pulse_train_interval=float(trainInterval),
                 pulse_train_count=int(trainCount)
             )
 
@@ -398,6 +398,15 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error querying Power status: {e}")
     
+    @pyqtSlot(bool)
+    def setAsyncMode(self, enable: bool):
+        """Set the async mode for the interface."""
+        try:
+            ret = self.interface.txdevice.async_mode(enable)
+            logger.info(f"Async mode set to: {ret}")
+        except Exception as e:
+            logger.error(f"Error setting async mode: {e}")
+
     @pyqtSlot(str, result=bool)
     def sendPingCommand(self, target: str):
         """Send a ping command to HV device."""

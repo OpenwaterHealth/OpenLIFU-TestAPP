@@ -129,19 +129,6 @@ Rectangle {
                         }
                         onClicked: {
                             
-                            console.log("Configuring transmitter with:");
-                            console.log("X:", xInput.text);
-                            console.log("Y:", yInput.text);
-                            console.log("Z:", zInput.text);
-                            console.log("Frequency:", frequencyInput.text);
-                            console.log("Voltage:", voltage.text);
-                            console.log("Trigger Frequency Hz:", triggerFrequencyHz.text);
-                            console.log("Trigger Pulse Count:", triggerPulseCount.text);
-                            console.log("Trigger Pulse Train Interval:", triggerPulseTrainInterval.text);
-                            console.log("Trigger Pulse Train Count:", triggerPulseTrainCount.text);
-                            console.log("Duration:", durationInput.text);
-                            console.log("Mode Selected:", triggerModeDropdown.currentIndex);
-
                             LIFUConnector.configure_transmitter(xInput.text, yInput.text, 
                                 zInput.text,  frequencyInput.text, voltage.text, triggerFrequencyHz.text, triggerPulseCount.text, triggerPulseTrainInterval.text, triggerPulseTrainCount.text, durationInput.text);
                             LIFUConnector.generate_plot(
@@ -163,6 +150,8 @@ Rectangle {
                         }
                         onClicked: {
                             console.log("Starting Sonication...");
+                            
+                            LIFUConnector.setAsyncMode(true)
                             LIFUConnector.start_sonication();
                         }
                     }
@@ -179,6 +168,7 @@ Rectangle {
                         onClicked: {
                             console.log("Stopping Sonication...");
                             LIFUConnector.stop_sonication();
+                            LIFUConnector.setAsyncMode(false)
                         }
                     }
 
@@ -350,6 +340,8 @@ Rectangle {
             }
         }
     }
+
+    
     // **Connections for LIFUConnector signals**
     Connections {
         target: LIFUConnector
