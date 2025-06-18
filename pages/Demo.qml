@@ -105,7 +105,7 @@ Rectangle {
 							model: ["Sequence", "Continuous", "Single"]
 							
 							onActivated: {
-								var selectedIndex = triggerModeDropdown.currentIndex;
+								var selectedIndex = triggerModeDropdown.currentText;
 								console.log("Selected " + selectedIndex);
 								
 							}
@@ -130,7 +130,9 @@ Rectangle {
                         onClicked: {
                             
                             LIFUConnector.configure_transmitter(xInput.text, yInput.text, 
-                                zInput.text,  frequencyInput.text, voltage.text, triggerFrequencyHz.text, triggerPulseCount.text, triggerPulseTrainInterval.text, triggerPulseTrainCount.text, durationInput.text);
+                                zInput.text,  frequencyInput.text, voltage.text, triggerFrequencyHz.text, triggerPulseCount.text, 
+                                triggerPulseTrainInterval.text, triggerPulseTrainCount.text, durationInput.text, 
+                                triggerModeDropdown.currentText);
                             LIFUConnector.generate_plot(
                                  xInput.text, yInput.text, zInput.text,
                                  frequencyInput.text, "100", triggerFrequencyHz.text,
