@@ -48,25 +48,6 @@ Rectangle {
                 spacing: 15
 
                 GroupBox {
-                    title: "Beam Focus"
-                    Layout.fillWidth: true
-
-                    GridLayout {
-                        columns: 2
-                        width: parent.width
-
-                        Text { text: "Left (X):"; color: "white" }
-                        TextField { id: xInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
-
-                        Text { text: "Front (Y):"; color: "white" }
-                        TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
-
-                        Text { text: "Down (Z):"; color: "white" }
-                        TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
-                    }
-                }
-
-                GroupBox {
                     title: "High Voltage"
                     Layout.fillWidth: true
 
@@ -92,9 +73,43 @@ Rectangle {
 
                         Text { text: "Duration (S):"; color: "white" }
                         TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-5" }
+                    }
+                }
+
+                GroupBox {
+                    title: "Trigger Profile"
+                    Layout.fillWidth: true
+
+                    GridLayout {
+                        columns: 2
+                        width: parent.width
 
                         Text { text: "Trigger (Hz):"; color: "white" }
-                        TextField { id: triggerInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
+                        TextField { id: triggerFrequencyHz; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
+
+                        Text { text: "Pulse Count:"; color: "white" }
+                        TextField { id: triggerPulseCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+
+                        Text { text: "Train Interval (S):"; color: "white" }
+                        TextField { id: triggerPulseTrainInterval; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+
+                        Text { text: "Train Count:"; color: "white" }
+                        TextField { id: triggerPulseTrainCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+
+                        Text { text: "Trigger Mode:"; color: "white" }
+
+						ComboBox {
+							id: triggerModeDropdown
+							Layout.preferredWidth: 150
+							Layout.preferredHeight: 32
+							model: ["Sequence", "Continuous", "Single"]
+							
+							onActivated: {
+								var selectedIndex = triggerModeDropdown.currentText;
+								console.log("Selected " + selectedIndex);
+								
+							}
+						}
                     }
                 }
 
@@ -113,12 +128,14 @@ Rectangle {
                             border.color: "#BDC3C7"
                         }
                         onClicked: {
-                            console.log("Configuring transmitter...");
+                            
                             LIFUConnector.configure_transmitter(xInput.text, yInput.text, 
-                                zInput.text,  frequencyInput.text, voltage.text, triggerInput.text, durationInput.text);
+                                zInput.text,  frequencyInput.text, voltage.text, triggerFrequencyHz.text, triggerPulseCount.text, 
+                                triggerPulseTrainInterval.text, triggerPulseTrainCount.text, durationInput.text, 
+                                triggerModeDropdown.currentText);
                             LIFUConnector.generate_plot(
                                  xInput.text, yInput.text, zInput.text,
-                                 frequencyInput.text, "100", triggerInput.text,
+                                 frequencyInput.text, "100", triggerFrequencyHz.text,
                                  "buffer"
                             );
                         }
@@ -135,6 +152,8 @@ Rectangle {
                         }
                         onClicked: {
                             console.log("Starting Sonication...");
+                            
+                            LIFUConnector.setAsyncMode(true)
                             LIFUConnector.start_sonication();
                         }
                     }
@@ -151,6 +170,7 @@ Rectangle {
                         onClicked: {
                             console.log("Stopping Sonication...");
                             LIFUConnector.stop_sonication();
+                            LIFUConnector.setAsyncMode(false)
                         }
                     }
 
@@ -170,7 +190,7 @@ Rectangle {
                             zInput.text = "25";
                             frequencyInput.text = "400e3";
                             voltage.text = "12.0";
-                            triggerInput.text = "10";
+                            triggerFrequencyHz.text = "10";
                             LIFUConnector.reset_configuration();
                         }
                     }
@@ -213,11 +233,35 @@ Rectangle {
                 id: messagePanel
                 width: 500
                 height: 150
-                color: "#252525"
+                color: "#1E1E20"
                 radius: 10
                 border.color: "#3E4E6F"
                 border.width: 2
 
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 15
+
+                    GroupBox {
+                        title: "Beam Focus"
+                        Layout.fillWidth: true
+
+                        GridLayout {
+                            columns: 4
+                            width: parent.width
+
+                            Text { text: "Left (X):"; color: "white" }
+                            TextField { id: xInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
+
+                            Text { text: "Front (Y):"; color: "white" }
+                            TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
+
+                            Text { text: "Down (Z):"; color: "white" }
+                            TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
+                        }
+                    }
+                }
             }
 			// Status Panel (Connection Indicators)
             Rectangle {
@@ -298,30 +342,55 @@ Rectangle {
             }
         }
     }
+
+    Timer {
+        id: postReadyTimer
+        interval: 1000 // delay in milliseconds (e.g., 1000 = 1 second)
+        repeat: false
+        running: false
+        onTriggered: {
+            console.log("Calling follow-up connector method...");
+            LIFUConnector.turnOffHV(); 
+            LIFUConnector.setAsyncMode(false); 
+        }
+    }
+
     // **Connections for LIFUConnector signals**
     Connections {
         target: LIFUConnector
 
-        function onSignalConnected(descriptor, port) {
+        onSignalConnected: function(descriptor, port) {
             console.log(descriptor + " connected on " + port);
             statusText.text = "Connected: " + descriptor + " on " + port;
         }
 
-        function onSignalDisconnected(descriptor, port) {
+        onSignalDisconnected: function(descriptor, port) {
             console.log(descriptor + " disconnected from " + port);
             statusText.text = "Disconnected: " + descriptor + " from " + port;
         }
 
-        function onSignalDataReceived(descriptor, message) {
+        onSignalDataReceived: function(descriptor, message) {
             console.log("Data from " + descriptor + ": " + message);
         }
 
-        function onPlotGenerated(imageData) {
+        onTriggerStateChanged: function(state) {
+            triggerStatus.text = state ? "On" : "Off";
+            triggerStatus.color = state ? "green" : "red";
+        }
+
+        onStateChanged: function(state) {
+            if (state === 3) {
+                postReadyTimer.start();
+            }
+        }
+
+        onPlotGenerated: function(imageData) {
             console.log("Received image data for display.");
             ultrasoundGraph.updateImage("data:image/png;base64," + imageData);
             statusText.text = "Status: Plot updated!";
         }
     }
+
 
     Component.onDestruction: {
         console.log("Closing UI, clearing LIFUConnector...");

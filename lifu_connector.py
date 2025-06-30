@@ -2,6 +2,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, pyqtProperty, pyqtSlot
 import logging
 import numpy as np
 import base58
+import re
 import json
 from scripts.generate_ultrasound_plot import generate_ultrasound_plot  # Import the function directly
 from openlifu.io.LIFUInterface import LIFUInterface
@@ -11,7 +12,21 @@ from openlifu.geo import Point
 from openlifu.plan.solution import Solution
 from openlifu.xdc import Transducer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("LIFUConnector")
+# Set up logging
+logger.setLevel(logging.DEBUG)
+logger.propagate = False
+
+# Create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# Create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Add formatter to ch
+ch.setFormatter(formatter)
+# Add ch to logger
+logger.addHandler(ch)
+
 
 # Define system states
 DISCONNECTED = 0
@@ -37,7 +52,7 @@ class LIFUConnector(QObject):
     temperatureHvUpdated = pyqtSignal(float, float)  # (temp1, temp2)
     temperatureTxUpdated = pyqtSignal(float, float)  # (tx_temp, amb_temp)
 
-    stateChanged = pyqtSignal()  # Notifies QML when state changes
+    stateChanged = pyqtSignal(int)  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
     triggerStateChanged = pyqtSignal(bool)  # 🔹 New signal for trigger state change
     txConfigStateChanged = pyqtSignal(bool)  # 🔹 New signal for tx configured state change
@@ -70,7 +85,7 @@ class LIFUConnector(QObject):
             self._state = READY
         elif self._txConnected and self._configured:
             self._state = CONFIGURED
-        self.stateChanged.emit()  # Notify QML of state update
+        self.stateChanged.emit(self._state)  # Notify QML of state update
         logger.info(f"Updated state: {self._state}")
 
     def _update_trigger_state(self, trigger_data):
@@ -86,6 +101,59 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error updating trigger state: {e}")
 
+    @pyqtSlot(str, result=dict)
+    def parse_status_string(self, status_str):
+        result = {
+            "status": None,
+            "mode": None,
+            "pulse_train_percent": None,
+            "pulse_percent": None,
+            "temp_tx": None,
+            "temp_ambient": None
+        }
+
+        try:
+            # Match top-level fields
+            pattern = re.compile(
+                r"STATUS:(\w+),"
+                r"MODE:(\w+),"
+                r"PULSE_TRAIN:\[(\d+)/(\d+)\],"
+                r"PULSE:\[(\d+)/(\d+)\],"
+                r"TEMP_TX:([0-9.]+),"
+                r"TEMP_AMBIENT:([0-9.]+)"
+            )
+            match = pattern.match(status_str.strip())
+
+            if not match:
+                raise ValueError("Input string format is invalid.")
+
+            (
+                status,
+                mode,
+                pt_current, pt_total,
+                p_current, p_total,
+                temp_tx,
+                temp_ambient
+            ) = match.groups()
+
+            # Convert and compute percentages
+            pt_current = int(pt_current)
+            pt_total = int(pt_total)
+            p_current = int(p_current)
+            p_total = int(p_total)
+
+            result["status"] = status
+            result["mode"] = mode
+            result["pulse_train_percent"] = (pt_current / pt_total * 100) if pt_total > 0 else 0
+            result["pulse_percent"] = (p_current / p_total * 100) if p_total > 0 else 0
+            result["temp_tx"] = float(temp_tx)
+            result["temp_ambient"] = float(temp_ambient)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to parse status string: {e}")
+            return result
 
     @pyqtSlot()
     async def start_monitoring(self):
@@ -133,6 +201,19 @@ class LIFUConnector(QObject):
         logger.info(f"Data received from {descriptor}: {message}")
         self.signalDataReceived.emit(descriptor, message)
 
+        if descriptor == "TX":
+            try:
+                parsed = self.parse_status_string(message)
+                if parsed["status"] in {"RUNNING", "STOPPED"}:
+                    # Update internal trigger state and notify QML
+                    if parsed["status"] == "STOPPED":
+                        logger.info("Trigger is stopped.")
+                        self._state = READY
+                        self.stateChanged.emit(self._state)
+
+            except Exception as e:
+                logger.error(f"Failed to parse and update trigger state: {e}")
+
     @pyqtSlot(str, float)
     def configureSolution(self, solutionName, amplitude):
         """Configures the solution and emits status to QML."""
@@ -165,11 +246,11 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error generating plot: {e}")
 
-    @pyqtSlot(str, str, str, str, str, str, str)
-    def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ, durationS):
+    @pyqtSlot(str, str, str, str, str, str, str, str, str, str, str)
+    def configure_transmitter(self, xInput, yInput, zInput, freq, voltage, triggerHZ, pulseCount, trainInterval, trainCount, durationS, mode):
         """Simulate configuring the transmitter."""
         if self._txConnected:
-            pulse = Pulse(frequency=float(freq), amplitude=float(voltage), duration=float(durationS))
+            pulse = Pulse(frequency=float(freq), duration=float(durationS))
             pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
             
             arr = Transducer.from_file(R".\pinmap.json")
@@ -179,12 +260,11 @@ class LIFUConnector(QObject):
             tof = distances*1e-3 / 1500
             delays = tof.max() - tof
             apodizations = np.ones(arr.numelements())
-            
             sequence = Sequence(
                 pulse_interval=1.0/float(triggerHZ),
-                pulse_count=1,
-                pulse_train_interval=1,
-                pulse_train_count=1
+                pulse_count=int(pulseCount),
+                pulse_train_interval=float(trainInterval),
+                pulse_train_count=int(trainCount)
             )
 
             solution = Solution(
@@ -196,12 +276,13 @@ class LIFUConnector(QObject):
                 apodizations = apodizations,
                 pulse = pulse,
                 sequence = sequence,
+                voltage=float(voltage),
                 target=pt,
                 foci=[pt],
                 approved=True
             )
             
-            self.interface.set_solution(solution)
+            self.interface.set_solution(solution, trigger_mode=mode)
 
             self._configured = True
             self.update_state()
@@ -210,13 +291,15 @@ class LIFUConnector(QObject):
         
     @pyqtSlot(int, int, result=bool)
     def setSimpleTxConfig(self, freq: float, pulses: int):
-        pulse = Pulse(frequency=freq, amplitude=10.0, duration=2e-4)
-        pt = Point(position=(0, 0, 50), units="mm")
+        print(freq, pulses)
+        pulse = Pulse(frequency=freq, duration=float(1e-5), amplitude=1.0)
+        pt = Point(position=(0, 0, 25), units="mm")
+
         sequence = Sequence(
-            pulse_interval=0.01,
-            pulse_count=pulses,
-            pulse_train_interval=1,
-            pulse_train_count=1
+            pulse_interval=1.0/freq,
+            pulse_count=int(1),
+            pulse_train_interval=float(0),
+            pulse_train_count=int(1)
         )
 
         solution = Solution(
@@ -258,7 +341,7 @@ class LIFUConnector(QObject):
                 self._state = RUNNING
             else:
                 logger.info("Failed to start trigger")
-            self.stateChanged.emit()
+            self.stateChanged.emit(self._state)
             logger.info("Sonication started")
 
     @pyqtSlot()
@@ -269,7 +352,7 @@ class LIFUConnector(QObject):
                 self._state = READY
             else:
                 logger.info("Failed to stop trigger")
-            self.stateChanged.emit()
+            self.stateChanged.emit(self._state)
             logger.info("Sonication stopped")
 
     @pyqtProperty(bool, notify=connectionStatusChanged)
@@ -296,12 +379,7 @@ class LIFUConnector(QObject):
     def hvConnected(self):
         """Expose HV connection status to QML."""
         return self._hvConnected
-    
-    @pyqtProperty(int, notify=stateChanged)
-    def state(self):
-        """Expose state as a QML property."""
-        return self._state
-    
+        
     @pyqtProperty(bool, notify=triggerStateChanged)
     def triggerEnabled(self):
         """Expose trigger enabled status to QML."""
@@ -397,6 +475,15 @@ class LIFUConnector(QObject):
         except Exception as e:
             logger.error(f"Error querying Power status: {e}")
     
+    @pyqtSlot(bool)
+    def setAsyncMode(self, enable: bool):
+        """Set the async mode for the interface."""
+        try:
+            ret = self.interface.txdevice.async_mode(enable)
+            logger.info(f"Async mode set to: {ret}")
+        except Exception as e:
+            logger.error(f"Error setting async mode: {e}")
+
     @pyqtSlot(str, result=bool)
     def sendPingCommand(self, target: str):
         """Send a ping command to HV device."""
@@ -620,6 +707,25 @@ class LIFUConnector(QObject):
                     logger.info("HV turned on successfully")
                 else:
                     logger.error("Failed to turn on HV")
+            hv_state = self.interface.hvcontroller.get_hv_status()            
+            v12_state = self.interface.hvcontroller.get_12v_status()
+            logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")
+            self.powerStatusReceived.emit(v12_state, hv_state)
+        except Exception as e:
+            logger.error(f"Error toggling HV: {e}")
+
+    @pyqtSlot()
+    def turnOffHV(self):
+        """Toggle HV on console."""
+        try:
+            # Check the current state of HV
+            if self.interface.hvcontroller.get_hv_status():
+                # If HV is on, turn it off
+                if self.interface.hvcontroller.turn_hv_off():
+                    logger.info("HV turned off successfully")
+                else:
+                    logger.error("Failed to turn off HV")
+
             hv_state = self.interface.hvcontroller.get_hv_status()            
             v12_state = self.interface.hvcontroller.get_12v_status()
             logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")
