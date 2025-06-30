@@ -52,7 +52,7 @@ class LIFUConnector(QObject):
     temperatureHvUpdated = pyqtSignal(float, float)  # (temp1, temp2)
     temperatureTxUpdated = pyqtSignal(float, float)  # (tx_temp, amb_temp)
 
-    stateChanged = pyqtSignal()  # Notifies QML when state changes
+    stateChanged = pyqtSignal(int)  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
     triggerStateChanged = pyqtSignal(bool)  # 🔹 New signal for trigger state change
     txConfigStateChanged = pyqtSignal(bool)  # 🔹 New signal for tx configured state change
@@ -85,7 +85,7 @@ class LIFUConnector(QObject):
             self._state = READY
         elif self._txConnected and self._configured:
             self._state = CONFIGURED
-        self.stateChanged.emit()  # Notify QML of state update
+        self.stateChanged.emit(self._state)  # Notify QML of state update
         logger.info(f"Updated state: {self._state}")
 
     def _update_trigger_state(self, trigger_data):
@@ -209,7 +209,7 @@ class LIFUConnector(QObject):
                     if parsed["status"] == "STOPPED":
                         logger.info("Trigger is stopped.")
                         self._state = READY
-                        self.stateChanged.emit()
+                        self.stateChanged.emit(self._state)
 
             except Exception as e:
                 logger.error(f"Failed to parse and update trigger state: {e}")
@@ -339,7 +339,7 @@ class LIFUConnector(QObject):
                 self._state = RUNNING
             else:
                 logger.info("Failed to start trigger")
-            self.stateChanged.emit()
+            self.stateChanged.emit(self._state)
             logger.info("Sonication started")
 
     @pyqtSlot()
@@ -350,7 +350,7 @@ class LIFUConnector(QObject):
                 self._state = READY
             else:
                 logger.info("Failed to stop trigger")
-            self.stateChanged.emit()
+            self.stateChanged.emit(self._state)
             logger.info("Sonication stopped")
 
     @pyqtProperty(bool, notify=connectionStatusChanged)
@@ -377,12 +377,7 @@ class LIFUConnector(QObject):
     def hvConnected(self):
         """Expose HV connection status to QML."""
         return self._hvConnected
-    
-    @pyqtProperty(int, notify=stateChanged)
-    def state(self):
-        """Expose state as a QML property."""
-        return self._state
-    
+        
     @pyqtProperty(bool, notify=triggerStateChanged)
     def triggerEnabled(self):
         """Expose trigger enabled status to QML."""
@@ -710,6 +705,25 @@ class LIFUConnector(QObject):
                     logger.info("HV turned on successfully")
                 else:
                     logger.error("Failed to turn on HV")
+            hv_state = self.interface.hvcontroller.get_hv_status()            
+            v12_state = self.interface.hvcontroller.get_12v_status()
+            logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")
+            self.powerStatusReceived.emit(v12_state, hv_state)
+        except Exception as e:
+            logger.error(f"Error toggling HV: {e}")
+
+    @pyqtSlot()
+    def turnOffHV(self):
+        """Toggle HV on console."""
+        try:
+            # Check the current state of HV
+            if self.interface.hvcontroller.get_hv_status():
+                # If HV is on, turn it off
+                if self.interface.hvcontroller.turn_hv_off():
+                    logger.info("HV turned off successfully")
+                else:
+                    logger.error("Failed to turn off HV")
+                    
             hv_state = self.interface.hvcontroller.get_hv_status()            
             v12_state = self.interface.hvcontroller.get_12v_status()
             logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")

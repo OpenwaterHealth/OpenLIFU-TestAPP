@@ -343,36 +343,54 @@ Rectangle {
         }
     }
 
-    
+    Timer {
+        id: postReadyTimer
+        interval: 1000 // delay in milliseconds (e.g., 1000 = 1 second)
+        repeat: false
+        running: false
+        onTriggered: {
+            console.log("Calling follow-up connector method...");
+            LIFUConnector.turnOffHV(); 
+            LIFUConnector.setAsyncMode(false); 
+        }
+    }
+
     // **Connections for LIFUConnector signals**
     Connections {
         target: LIFUConnector
 
-        function onSignalConnected(descriptor, port) {
+        onSignalConnected: function(descriptor, port) {
             console.log(descriptor + " connected on " + port);
             statusText.text = "Connected: " + descriptor + " on " + port;
         }
 
-        function onSignalDisconnected(descriptor, port) {
+        onSignalDisconnected: function(descriptor, port) {
             console.log(descriptor + " disconnected from " + port);
             statusText.text = "Disconnected: " + descriptor + " from " + port;
         }
 
-        function onSignalDataReceived(descriptor, message) {
+        onSignalDataReceived: function(descriptor, message) {
             console.log("Data from " + descriptor + ": " + message);
         }
 
-        onTriggerStateChanged: (state) => {
+        onTriggerStateChanged: function(state) {
             triggerStatus.text = state ? "On" : "Off";
             triggerStatus.color = state ? "green" : "red";
         }
 
-        function onPlotGenerated(imageData) {
+        onStateChanged: function(state) {
+            if (state === 3) {
+                postReadyTimer.start();
+            }
+        }
+
+        onPlotGenerated: function(imageData) {
             console.log("Received image data for display.");
             ultrasoundGraph.updateImage("data:image/png;base64," + imageData);
             statusText.text = "Status: Plot updated!";
         }
     }
+
 
     Component.onDestruction: {
         console.log("Closing UI, clearing LIFUConnector...");
