@@ -291,13 +291,15 @@ class LIFUConnector(QObject):
         
     @pyqtSlot(int, int, result=bool)
     def setSimpleTxConfig(self, freq: float, pulses: int):
-        pulse = Pulse(frequency=freq, amplitude=10.0, duration=2e-4)
-        pt = Point(position=(0, 0, 50), units="mm")
+        print(freq, pulses)
+        pulse = Pulse(frequency=freq, duration=float(1e-5), amplitude=1.0)
+        pt = Point(position=(0, 0, 25), units="mm")
+
         sequence = Sequence(
-            pulse_interval=0.01,
-            pulse_count=pulses,
-            pulse_train_interval=1,
-            pulse_train_count=1
+            pulse_interval=1.0/freq,
+            pulse_count=int(1),
+            pulse_train_interval=float(0),
+            pulse_train_count=int(1)
         )
 
         solution = Solution(
@@ -723,7 +725,7 @@ class LIFUConnector(QObject):
                     logger.info("HV turned off successfully")
                 else:
                     logger.error("Failed to turn off HV")
-                    
+
             hv_state = self.interface.hvcontroller.get_hv_status()            
             v12_state = self.interface.hvcontroller.get_12v_status()
             logger.info(f"HV State: {hv_state} - 12V State: {v12_state}")

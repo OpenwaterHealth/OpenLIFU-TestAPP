@@ -544,20 +544,24 @@ Rectangle {
                                     var selectedIndex = txconfigDropdown.currentIndex;
                                     let frequency = 400000
                                     let pulse_count = 5
+                                    let durationMS = 2e-5
 
                                     // Update frequency and pulse width based on the selected index
                                     switch (selectedIndex) {
                                         case 0: // 100KHz 
                                             frequency = 100000
-                                            pulse_count = 10
+                                            pulse_count = 4
+                                            durationMS = 2e-5
                                             break;
                                         case 1: // 200KHz 
                                             frequency = 200000
-                                            pulse_count = 10
+                                            pulse_count = 8
+                                            durationMS = 2e-5
                                             break;
                                         case 2: // 400KHz 
                                             frequency = 400000
                                             pulse_count = 10
+                                            durationMS = 2e-5
                                             break;
                                         default:
                                             console.log("Invalid selection");
@@ -565,7 +569,7 @@ Rectangle {
                                     }
 
                                     // Call your function with the selected index
-                                    LIFUConnector.setSimpleTxConfig(frequency, pulse_count);
+                                    LIFUConnector.configure_transmitter(0,0,25,frequency,12.0,5.0,1.0,0,1,durationMS,"continuous");
                                 }
 
                             }
