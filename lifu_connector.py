@@ -271,7 +271,7 @@ class LIFUConnector(QObject):
                 id="solution",
                 name="Solution",
                 protocol_id="example_protocol",
-                transducer_id="example_transducer",
+                transducer="example_transducer",
                 delays = delays,
                 apodizations = apodizations,
                 pulse = pulse,
