@@ -8,6 +8,7 @@ from PyQt6.QtGui import QGuiApplication, QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 from qasync import QEventLoop
 from lifu_connector import LIFUConnector
+from pathlib import Path
 
 # run with lab supply
 # set PYTHONPATH=%cd%..\OpenLIFU-python\src;%PYTHONPATH%
@@ -17,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 # Suppress PyQt6 DeprecationWarnings related to SIP
 warnings.simplefilter("ignore", DeprecationWarning)
+
+def resource_path(rel: str) -> str:
+    import sys, os
+    base = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(sys.executable if getattr(sys,"frozen",False) else __file__)))
+    return os.path.join(base, rel)
 
 def parse_arguments():
     """Parse command-line arguments."""
@@ -33,6 +39,7 @@ def main():
 
     os.environ["QT_QUICK_CONTROLS_STYLE"] = "Material"
     os.environ["QT_QUICK_CONTROLS_MATERIAL_THEME"] = "Dark"
+    os.environ["QT_LOGGING_RULES"] = "qt.qpa.fonts=false"
 
     app = QGuiApplication(sys.argv)
     app.setWindowIcon(QIcon("assets/images/favicon.png"))
@@ -44,9 +51,9 @@ def main():
     
     # Expose to QML
     engine.rootContext().setContextProperty("LIFUConnector", lifu_connector)
-    engine.rootContext().setContextProperty("appVersion", "1.0.10")
+    engine.rootContext().setContextProperty("appVersion", "1.0.11")
 
-    engine.load("main.qml")
+    engine.load(resource_path("main.qml"))
 
     if not engine.rootObjects():
         print("Error: Failed to load QML file")

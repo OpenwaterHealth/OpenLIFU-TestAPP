@@ -404,8 +404,11 @@ class LIFUConnector(QObject):
         try:
             fw_version = self.interface.txdevice.get_version()
             logger.info(f"Version: {fw_version}")
-            hw_id = self.interface.txdevice.get_hardware_id()
-            device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
+            hw_id = self.interface.txdevice.get_hardware_id()            
+            if hw_id :
+                device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
+            else:
+                device_id = 'N/A'
             self.txDeviceInfoReceived.emit(fw_version, device_id)
             logger.info(f"Device Info - Firmware: {fw_version}, Device ID: {device_id}")
         except Exception as e:
