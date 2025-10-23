@@ -11,6 +11,7 @@ from openlifu.bf.sequence import Sequence
 from openlifu.geo import Point
 from openlifu.plan.solution import Solution
 from openlifu.xdc import Transducer
+from openlifu.xdc.util import load_transducer_from_file
 
 logger = logging.getLogger("LIFUConnector")
 # Set up logging
@@ -48,9 +49,10 @@ class LIFUConnector(QObject):
 
     # New Signals for data updates
     hvDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
-    txDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
+    txDeviceInfoReceived = pyqtSignal(int, str, str)  # (firmwareVersion, deviceId)
     temperatureHvUpdated = pyqtSignal(float, float)  # (temp1, temp2)
-    temperatureTxUpdated = pyqtSignal(float, float)  # (tx_temp, amb_temp)
+    temperatureTxUpdated = pyqtSignal(int, float, float)  # (tx_temp, amb_temp)
+    numModulesUpdated    = pyqtSignal()  # (num_modules)
 
     stateChanged = pyqtSignal(int)  # Notifies QML when state changes
     connectionStatusChanged = pyqtSignal()  # 🔹 New signal for connection updates
@@ -66,6 +68,7 @@ class LIFUConnector(QObject):
         self._state = DISCONNECTED
         self._trigger_state = False  # Internal state to track trigger status
         self._txconfigured_state = False  # Internal state to track trigger status
+        self._num_modules_connected = 0
 
         self.connect_signals()
 
@@ -253,7 +256,11 @@ class LIFUConnector(QObject):
             pulse = Pulse(frequency=float(freq), duration=float(durationS))
             pt = Point(position=(float(xInput),float(yInput),float(zInput)), units="mm")
             
-            arr = Transducer.from_file(R".\pinmap.json")
+            self.queryNumModules()
+
+            arr = load_transducer_from_file(fR".\pinmap_{self._num_modules_connected}x.json")
+            logger.info(f"{self._num_modules_connected}x config file loaded")
+            
             focus = pt.get_position(units="mm")
 
             distances = np.sqrt(np.sum((focus - arr.get_positions(units="mm"))**2, 1))
@@ -337,7 +344,8 @@ class LIFUConnector(QObject):
     def start_sonication(self):
         """Start the beam, transitioning to RUNNING state."""
         if self._state == READY:
-            if self.interface.start_sonication():
+            self.interface.hvcontroller.turn_hv_on()
+            if self.interface.txdevice.start_trigger():
                 self._state = RUNNING
             else:
                 logger.info("Failed to start trigger")
@@ -402,14 +410,20 @@ class LIFUConnector(QObject):
     def queryTxInfo(self):
         """Fetch and emit device information."""
         try:
-            fw_version = self.interface.txdevice.get_version()
-            logger.info(f"Version: {fw_version}")
-            hw_id = self.interface.txdevice.get_hardware_id()
-            device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
-            self.txDeviceInfoReceived.emit(fw_version, device_id)
+            for module in range(1, self._num_modules_connected+1):
+                fw_version = self.interface.txdevice.get_version(module)
+                logger.info(f"Version: {fw_version}")
+                hw_id = self.interface.txdevice.get_hardware_id(module)
+                device_id = base58.b58encode(bytes.fromhex(hw_id)).decode()
+                self.txDeviceInfoReceived.emit(module, fw_version, device_id)
             logger.info(f"Device Info - Firmware: {fw_version}, Device ID: {device_id}")
         except Exception as e:
             logger.error(f"Error querying device info: {e}")
+
+    @pyqtProperty(int, notify=numModulesUpdated)
+    def queryNumModulesConnected(self):
+        """Fetch and emit number of connected TX modules."""
+        return self._num_modules_connected
 
     @pyqtSlot()
     def queryHvTemperature(self):
@@ -428,13 +442,26 @@ class LIFUConnector(QObject):
     def queryTxTemperature(self):
         """Fetch and emit temperature data."""
         try:
-            tx_temp = self.interface.txdevice.get_temperature()  
-            amb_temp = self.interface.txdevice.get_ambient_temperature()  
+            for module in range(1, self._num_modules_connected+1):
+                logger.info(f"Module: {module}")
+                tx_temp = self.interface.txdevice.get_temperature(module)  
+                amb_temp = self.interface.txdevice.get_ambient_temperature(module)  
 
-            self.temperatureTxUpdated.emit(tx_temp, amb_temp)
-            logger.info(f"Temperature Data - Temp1: {tx_temp}, Temp2: {amb_temp}")
+                self.temperatureTxUpdated.emit(module, tx_temp, amb_temp)
+                logger.info(f"Temperature Data - Temp1: {tx_temp}, Temp2: {amb_temp}")
         except Exception as e:
             logger.error(f"Error querying temperature data: {e}")
+
+    @pyqtSlot()
+    def queryNumModules(self):
+        """Fetch and emit number of connected TX modules."""
+        try:
+            self._num_modules_connected = self.interface.txdevice.get_tx_module_count()
+            self.numModulesUpdated.emit()
+            logger.info(f"Number of connected TX modules: {self._num_modules_connected}")
+
+        except Exception as e:
+            logger.error(f"Error querying number of TX modules: {e}")
 
     @pyqtSlot(int)
     def setRGBState(self, state):

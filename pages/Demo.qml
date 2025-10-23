@@ -153,7 +153,7 @@ Rectangle {
                         onClicked: {
                             console.log("Starting Sonication...");
                             
-                            LIFUConnector.setAsyncMode(true)
+                            // LIFUConnector.setAsyncMode(true)
                             LIFUConnector.start_sonication();
                         }
                     }
@@ -170,7 +170,7 @@ Rectangle {
                         onClicked: {
                             console.log("Stopping Sonication...");
                             LIFUConnector.stop_sonication();
-                            LIFUConnector.setAsyncMode(false)
+                            // LIFUConnector.setAsyncMode(false)
                         }
                     }
 
