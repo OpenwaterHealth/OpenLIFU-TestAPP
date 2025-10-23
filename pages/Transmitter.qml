@@ -13,13 +13,22 @@ Rectangle {
     opacity: 0.95
 
     // Properties for dynamic data
-    property string firmwareVersion: "N/A"
-    property string deviceId: "N/A"
-    property real tx_temperature: 0.0
-    property real amb_temperature: 0.0
+    property var modules: {
+        return {
+            "module_1": {firmwareVersion: "N/A",
+                        deviceId: "N/A",
+                        tx_temperature: 0.0,
+                        amb_temperature: 0.0 },
+            "module_2": {firmwareVersion: "N/A",
+                        deviceId: "N/A",
+                        tx_temperature: 0.0,
+                        amb_temperature: 0.0 }
+        }
+    }
 
     function updateStates() {
         console.log("Updating all states...")
+        LIFUConnector.queryNumModules()
         LIFUConnector.queryTxInfo()
         LIFUConnector.queryTxTemperature()
         LIFUConnector.queryTriggerInfo()
@@ -48,31 +57,45 @@ Rectangle {
 
         // Handle TX Connected state
         onTxConnectedChanged: {
-            if (LIFUConnector.txConnected) {
-                infoTimer.start()          // One-time info fetch
-            } else {
-                console.log("TX Disconnected - Clearing Data...")
-                firmwareVersion = "N/A"
-                deviceId = "N/A"
-                tx_temperature = 0.0
-                amb_temperature = 0.0
-                
-                pingResult.text = ""
-                echoResult.text = ""
-                toggleLedResult.text = ""
-            }
-        }
+        if (LIFUConnector.txConnected) {
+            infoTimer.start()  // One-time info fetch
+        } else {
+            console.log("TX Disconnected - Clearing Data...")
+
+        modules["module_1"].firmwareVersion = "N/A"
+        modules["module_1"].deviceId = "N/A"
+        modules["module_1"].tx_temp = 0.0
+        modules["module_1"].amb_temp = 0.0
+
+        modules["module_2"].firmwareVersion = "N/A"
+        modules["module_2"].deviceId = "N/A"
+        modules["module_2"].tx_temp = 0.0
+        modules["module_2"].amb_temp = 0.0
+
+        pingResult.text = ""
+        echoResult.text = ""
+        toggleLedResult.text = ""
+    }
+}
 
         // Handle device info response
-        onTxDeviceInfoReceived: (fwVersion, devId) => {
-            firmwareVersion = fwVersion
-            deviceId = devId
+        onTxDeviceInfoReceived: (module, fwVersion, devId) => {
+            let index = "module_" + module.toString()
+            modules[index].firmwareVersion = fwVersion
+            modules[index].deviceId = devId
+
+            // Update modules object so QML detects the change
+            modules = JSON.parse(JSON.stringify(modules))
         }
 
         // Handle temperature updates
-        onTemperatureTxUpdated: (tx_temp, amb_temp) => {
-            tx_temperature = tx_temp
-            amb_temperature = amb_temp
+        onTemperatureTxUpdated: (module, tx_temp, amb_temp) => {
+            let index = "module_" + module.toString()
+            modules[index].tx_temperature = tx_temp
+            modules[index].amb_temperature = amb_temp
+
+            // Update modules object so QML detects the change
+            modules = JSON.parse(JSON.stringify(modules))
         }
 
         onTriggerStateChanged: (state) => {
@@ -117,12 +140,14 @@ Rectangle {
                 // Vertical Stack Section
                 ColumnLayout {
                     Layout.fillHeight: true
-                    Layout.preferredWidth: parent.width * 0.65
+                    // Layout.preferredWidth: parent.width * 0.65
+                    Layout.preferredWidth: 1
                     spacing: 10
                     
                     // Communication Tests Box
                     Rectangle {
-                        width: 650
+                        width: 500
+                        // Layout.preferredWidth: 2
                         height: 195
                         radius: 6
                         color: "#1E1E20"
@@ -143,7 +168,8 @@ Rectangle {
                         GridLayout {
                             anchors.left: parent.left
                             anchors.top: parent.top
-                            anchors.leftMargin: 20   
+                            anchors.leftMargin: 20
+                            anchors.rightMargin: 20   
                             anchors.topMargin: 60    
                             columns: 5
                             rowSpacing: 10
@@ -205,6 +231,7 @@ Rectangle {
                                 Layout.preferredWidth: 200 
                             }
 
+
                             Button {
                                 id: ledButton
                                 text: "Toggle LED"
@@ -249,6 +276,8 @@ Rectangle {
                                     }
                                 }
                             }
+                            
+
                             Text {
                                 id: toggleLedResult
                                 Layout.preferredWidth: 80
@@ -328,7 +357,8 @@ Rectangle {
                     
                     // Trigger Tests
                     Rectangle {
-                        width: 650
+                        // width: 500
+                        Layout.fillWidth: true
                         height: 390
                         radius: 6
                         color: "#1E1E20"
@@ -420,52 +450,58 @@ Rectangle {
                             }
 
                             Item {
-                                Layout.preferredWidth: 100
+                                Layout.preferredWidth: 120
                             }
 
-
-                            Button {
-                                id: triggerEnable
-                                text: "Toggle Trigger"
-                                Layout.preferredWidth: 80
+                            Item {
+                                Layout.fillWidth: true
                                 Layout.preferredHeight: 50
-                                hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.txConnected 
 
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
+                                Button {
+                                    id: triggerEnable
+                                    text: "Toggle Trigger"
+                                    anchors.right: parent.left
+                                    Layout.preferredWidth: 80
+                                    Layout.preferredHeight: 50
+                                    Layout.alignment: Qt.AlignRight
+                                    hoverEnabled: true  // Enable hover detection
+                                    enabled: LIFUConnector.txConnected
 
-                                background: Rectangle {
-                                    id: triggerButtonBackground
-                                    color: {
-                                        if (!parent.enabled) {
-                                            return "#3A3F4B";  // Disabled color
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+
+                                    background: Rectangle {
+                                        id: triggerButtonBackground
+                                        color: {
+                                            if (!parent.enabled) {
+                                                return "#3A3F4B";  // Disabled color
+                                            }
+                                            return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
                                         }
-                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
-                                    }
-                                    radius: 4
-                                    border.color: {
-                                        if (!parent.enabled) {
-                                            return "#7F8C8D";  // Disabled border color
+                                        radius: 4
+                                        border.color: {
+                                            if (!parent.enabled) {
+                                                return "#7F8C8D";  // Disabled border color
+                                            }
+                                            return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
                                         }
-                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
                                     }
-                                }
 
-                                onClicked: {
-                                    // Toggle the trigger state
-                                    var success = LIFUConnector.toggleTrigger();
-                                    if (success) {
-                                        console.log("Trigger toggled successfully.");
-                                    } else {
-                                        console.log("Failed to toggle trigger.");
+                                    onClicked: {
+                                        // Toggle the trigger state
+                                        var success = LIFUConnector.toggleTrigger();
+                                        if (success) {
+                                            console.log("Trigger toggled successfully.");
+                                        } else {
+                                            console.log("Failed to toggle trigger.");
+                                        }
                                     }
-                                }
 
+                                }
                             }
 
                             Text {
@@ -502,76 +538,82 @@ Rectangle {
                                 Layout.preferredWidth: 100
                             }
 
-                            Button {
-                                id: setTxConfig
-                                text: "Set TX Config"
-                                Layout.preferredWidth: 80
+                            Item {
+                                Layout.fillWidth: true
                                 Layout.preferredHeight: 50
-                                hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.txConnected 
+                            
+                                Button {
+                                    id: setTxConfig
+                                    text: "Set TX Config"
+                                    anchors.right: parent.right
+                                    Layout.preferredWidth: 80
+                                    Layout.preferredHeight: 50
+                                    hoverEnabled: true  // Enable hover detection
+                                    enabled: LIFUConnector.txConnected 
 
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
 
-                                background: Rectangle {
-                                    id: setTxConfigBackground
-                                    color: {
-                                        if (!parent.enabled) {
-                                            return "#3A3F4B";  // Disabled color
+                                    background: Rectangle {
+                                        id: setTxConfigBackground
+                                        color: {
+                                            if (!parent.enabled) {
+                                                return "#3A3F4B";  // Disabled color
+                                            }
+                                            return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
                                         }
-                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
-                                    }
-                                    radius: 4
-                                    border.color: {
-                                        if (!parent.enabled) {
-                                            return "#7F8C8D";  // Disabled border color
+                                        radius: 4
+                                        border.color: {
+                                            if (!parent.enabled) {
+                                                return "#7F8C8D";  // Disabled border color
+                                            }
+                                            return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
                                         }
-                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
                                     }
+
+                                    onClicked: {
+                                        // Set configuration of transmitter
+                                        
+                                        if(LIFUConnector.triggerEnabled){
+                                            LIFUConnector.toggleTrigger();
+                                        }
+                                        txconfigStatus.text = ""
+                                        var selectedIndex = txconfigDropdown.currentIndex;
+                                        let frequency = 400000
+                                        let pulse_count = 5
+                                        let durationMS = 2e-5
+
+                                        // Update frequency and pulse width based on the selected index
+                                        switch (selectedIndex) {
+                                            case 0: // 100KHz 
+                                                frequency = 100000
+                                                pulse_count = 4
+                                                durationMS = 2e-5
+                                                break;
+                                            case 1: // 200KHz 
+                                                frequency = 200000
+                                                pulse_count = 8
+                                                durationMS = 2e-5
+                                                break;
+                                            case 2: // 400KHz 
+                                                frequency = 400000
+                                                pulse_count = 10
+                                                durationMS = 2e-5
+                                                break;
+                                            default:
+                                                console.log("Invalid selection");
+                                                return;
+                                        }
+
+                                        // Call your function with the selected index
+                                        LIFUConnector.configure_transmitter(0,0,25,frequency,12.0,5.0,1.0,0,1,durationMS,"continuous");
+                                    }
+
                                 }
-
-                                onClicked: {
-                                    // Set configuration of transmitter
-                                    
-                                    if(LIFUConnector.triggerEnabled){
-                                        LIFUConnector.toggleTrigger();
-                                    }
-                                    txconfigStatus.text = ""
-                                    var selectedIndex = txconfigDropdown.currentIndex;
-                                    let frequency = 400000
-                                    let pulse_count = 5
-                                    let durationMS = 2e-5
-
-                                    // Update frequency and pulse width based on the selected index
-                                    switch (selectedIndex) {
-                                        case 0: // 100KHz 
-                                            frequency = 100000
-                                            pulse_count = 4
-                                            durationMS = 2e-5
-                                            break;
-                                        case 1: // 200KHz 
-                                            frequency = 200000
-                                            pulse_count = 8
-                                            durationMS = 2e-5
-                                            break;
-                                        case 2: // 400KHz 
-                                            frequency = 400000
-                                            pulse_count = 10
-                                            durationMS = 2e-5
-                                            break;
-                                        default:
-                                            console.log("Invalid selection");
-                                            return;
-                                    }
-
-                                    // Call your function with the selected index
-                                    LIFUConnector.configure_transmitter(0,0,25,frequency,12.0,5.0,1.0,0,1,durationMS,"continuous");
-                                }
-
                             }
 
                             Text {
@@ -602,8 +644,6 @@ Rectangle {
                         // TX Status Indicator
                         RowLayout {
                             spacing: 8
-
-                            Text { text: "TX"; font.pixelSize: 16; color: "#BDC3C7" }
                         
                             Rectangle {
                                 width: 20
@@ -615,7 +655,22 @@ Rectangle {
                             }
 
                             Text {
-                                text: LIFUConnector.txConnected ? "Connected" : "Not Connected"
+                                text: LIFUConnector.txConnected ? "Module 1 Connected" : "Module 1 Not Connected"
+                                font.pixelSize: 16
+                                color: "#BDC3C7"
+                            }
+
+                            Rectangle {
+                                width: 20
+                                height: 20
+                                radius: 10
+                                color: LIFUConnector.queryNumModulesConnected == 2 ? "green" : "red"
+                                border.color: "black"
+                                border.width: 1
+                            }
+
+                            Text {
+                                text: LIFUConnector.queryNumModulesConnected == 2 ? "Module 2 Connected" : "Module 2 Not Connected"
                                 font.pixelSize: 16
                                 color: "#BDC3C7"
                             }
@@ -664,41 +719,101 @@ Rectangle {
                             color: "#3E4E6F"
                         }
 
-                        // Display Device ID (Smaller Text)
                         RowLayout {
-                            spacing: 8
-                            Text { text: "Device ID:"; color: "#BDC3C7"; font.pixelSize: 14 }
-                            Text { text: deviceId; color: "#3498DB"; font.pixelSize: 14 }
-                        }
+                            spacing: 40   // space between columns
 
-                        // Display Firmware Version (Smaller Text)
-                        RowLayout {
-                            spacing: 8
-                            Text { text: "Firmware Version:"; color: "#BDC3C7"; font.pixelSize: 14 }
-                            Text { text: firmwareVersion; color: "#2ECC71"; font.pixelSize: 14 }
-                        }
+                            // Left column (Module 1)
+                            ColumnLayout {
+                                spacing: 8
 
+                                RowLayout {
+                                    spacing: 8
+                                    Text { text: "Device ID:"; color: "#BDC3C7"; font.pixelSize: 14 }
+                                    Text { text: modules["module_1"].deviceId; color: "#3498DB"; font.pixelSize: 14 }
+                                }
 
-                        ColumnLayout {
-                            Layout.alignment: Qt.AlignHCenter 
-                            spacing: 25  
-
-                            // TEMP #1 Widget
-                            TemperatureWidget {
-                                id: tempWidget1
-                                temperature: tx_temperature
-                                tempName: "TX Temperature"
-                                Layout.alignment: Qt.AlignHCenter
+                                RowLayout {
+                                    spacing: 8
+                                    Text { text: "Firmware Version:"; color: "#BDC3C7"; font.pixelSize: 14 }
+                                    Text { text: modules["module_1"].firmwareVersion; color: "#2ECC71"; font.pixelSize: 14 }
+                                }
                             }
 
-                            // TEMP #2 Widget
-                            TemperatureWidget {
-                                id: tempWidget2
-                                temperature: amb_temperature
-                                tempName: "Amb Temperature"
-                                Layout.alignment: Qt.AlignHCenter
+                            // Right column (Module 2)
+                            ColumnLayout {
+                                spacing: 8
+
+                                RowLayout {
+                                    spacing: 8
+                                    Text { text: "Device ID:"; color: "#BDC3C7"; font.pixelSize: 14 }
+                                    Text { text: modules["module_2"].deviceId; color: "#3498DB"; font.pixelSize: 14 }
+                                }
+
+                                RowLayout {
+                                    spacing: 8
+                                    Text { text: "Firmware Version:"; color: "#BDC3C7"; font.pixelSize: 14 }
+                                    Text { text: modules["module_2"].firmwareVersion; color: "#2ECC71"; font.pixelSize: 14 }
+                                }
                             }
                         }
+
+
+                        RowLayout {
+                            id: temperatureGrid
+                            spacing: 20
+
+                            ColumnLayout {
+                                Label {
+                                    text: "Module 1"
+                                    font.bold: true
+                                    font.pointSize: 16
+                                    horizontalAlignment: Text.AlignHCenter
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                // MODULE 1 TEMP #1 Widget
+                                TemperatureWidget {
+                                    id: tempWidget1
+                                    temperature: modules["module_1"].tx_temperature
+                                    tempName: "TX Temperature"
+                                    Layout.fillWidth: true
+                                }
+
+                                // MODULE 1 TEMP #2 Widget
+                                TemperatureWidget {
+                                    id: tempWidget2
+                                    temperature: modules["module_1"].amb_temperature
+                                    tempName: "Ambient Temperature"
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+                            
+                            ColumnLayout{
+                                Label {
+                                    text: "Module 2"
+                                    font.bold: true
+                                    font.pointSize: 16
+                                    horizontalAlignment: Text.AlignHCenter
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                // MODULE 2 TEMP #1 Widget
+                                TemperatureWidget {
+                                    id: tempWidget3
+                                    temperature: modules["module_2"].tx_temperature
+                                    tempName: "TX Temperature"
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+
+                                // MODULE 2 TEMP #2 Widget
+                                TemperatureWidget {
+                                    id: tempWidget4
+                                    temperature: modules["module_2"].amb_temperature
+                                    tempName: "Ambient Temperature"
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+                        }
+
+                        
 
 
                         // Soft Reset Button

@@ -60,9 +60,8 @@ Rectangle {
     Text {
         text: tempName
         anchors {
-            top: parent.bottom
+            bottom: parent.bottom
             horizontalCenter: parent.horizontalCenter
-            topMargin: 5
         }
         font.pixelSize: 16
         color: "#BDC3C7"
