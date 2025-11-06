@@ -228,7 +228,7 @@ Rectangle {
                             }
 
                             Item {
-                                Layout.preferredWidth: 200 
+                                Layout.fillWidth: true
                             }
 
 
@@ -341,7 +341,7 @@ Rectangle {
                             }
 
                             Item {
-                                Layout.preferredWidth: 200 
+                                Layout.fillWidth: true
                             }
 
                             Item {
