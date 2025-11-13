@@ -456,7 +456,7 @@ class LIFUConnector(QObject):
     def queryNumModules(self):
         """Fetch and emit number of connected TX modules."""
         try:
-            self._num_modules_connected = self.interface.txdevice.get_tx_module_count()
+            self._num_modules_connected = int(self.interface.txdevice.enum_tx7332_devices()/2)
             self.numModulesUpdated.emit()
             logger.info(f"Number of connected TX modules: {self._num_modules_connected}")
 

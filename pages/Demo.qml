@@ -56,7 +56,7 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Voltage (+/-):"; color: "white" }
-                        TextField { id: voltage; Layout.preferredHeight: 32; font.pixelSize: 14; text: "12.0" }
+                        TextField { id: voltage; Layout.preferredHeight: 32; font.pixelSize: 14; text: "20.0" }
                     }
                 }
 
@@ -72,7 +72,7 @@ Rectangle {
                         TextField { id: frequencyInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "400e3" }
 
                         Text { text: "Duration (S):"; color: "white" }
-                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "2e-5" }
+                        TextField { id: durationInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "5e-3" }
                     }
                 }
 
@@ -85,13 +85,13 @@ Rectangle {
                         width: parent.width
 
                         Text { text: "Trigger (Hz):"; color: "white" }
-                        TextField { id: triggerFrequencyHz; Layout.preferredHeight: 32; font.pixelSize: 14; text: "10" }
+                        TextField { id: triggerFrequencyHz; Layout.preferredHeight: 32; font.pixelSize: 14; text: "100" }
 
                         Text { text: "Pulse Count:"; color: "white" }
-                        TextField { id: triggerPulseCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+                        TextField { id: triggerPulseCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1000" }
 
                         Text { text: "Train Interval (S):"; color: "white" }
-                        TextField { id: triggerPulseTrainInterval; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
+                        TextField { id: triggerPulseTrainInterval; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
 
                         Text { text: "Train Count:"; color: "white" }
                         TextField { id: triggerPulseTrainCount; Layout.preferredHeight: 32; font.pixelSize: 14; text: "1" }
@@ -102,7 +102,7 @@ Rectangle {
 							id: triggerModeDropdown
 							Layout.preferredWidth: 150
 							Layout.preferredHeight: 32
-							model: ["Sequence", "Continuous", "Single"]
+							model: ["Continuous", "Sequence", "Single"]
 							
 							onActivated: {
 								var selectedIndex = triggerModeDropdown.currentText;
@@ -187,10 +187,15 @@ Rectangle {
                             console.log("Resetting parameters...");
                             xInput.text = "0";
                             yInput.text = "0";
-                            zInput.text = "25";
+                            zInput.text = "50";
                             frequencyInput.text = "400e3";
-                            voltage.text = "12.0";
-                            triggerFrequencyHz.text = "10";
+                            voltage.text = "20.0";
+                            triggerFrequencyHz.text = "100";
+                            triggerPulseCount.text = "1000";
+                            triggerPulseTrainInterval.text = "0";
+                            triggerPulseTrainCount.text = "1";
+                            durationInput.text = "5e-3";
+                            triggerModeDropdown.currentIndex = 0;
                             LIFUConnector.reset_configuration();
                         }
                     }
@@ -258,7 +263,7 @@ Rectangle {
                             TextField { id: yInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "0" }
 
                             Text { text: "Down (Z):"; color: "white" }
-                            TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "25" }
+                            TextField { id: zInput; Layout.preferredHeight: 32; font.pixelSize: 14; text: "50" }
                         }
                     }
                 }
