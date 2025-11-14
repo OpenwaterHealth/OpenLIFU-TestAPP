@@ -359,32 +359,32 @@ Rectangle {
     Connections {
         target: LIFUConnector
 
-        onSignalConnected: function(descriptor, port) {
+        function onSignalConnected(descriptor, port) {
             console.log(descriptor + " connected on " + port);
             statusText.text = "Connected: " + descriptor + " on " + port;
         }
 
-        onSignalDisconnected: function(descriptor, port) {
+        function onSignalDisconnected(descriptor, port) {
             console.log(descriptor + " disconnected from " + port);
             statusText.text = "Disconnected: " + descriptor + " from " + port;
         }
 
-        onSignalDataReceived: function(descriptor, message) {
+        function onSignalDataReceived(descriptor, message) {
             console.log("Data from " + descriptor + ": " + message);
         }
 
-        onTriggerStateChanged: function(state) {
+        function onTriggerStateChanged(state) {
             triggerStatus.text = state ? "On" : "Off";
             triggerStatus.color = state ? "green" : "red";
         }
 
-        onStateChanged: function(state) {
+        function onStateChanged(state) {
             if (state === 3) {
                 postReadyTimer.start();
             }
         }
 
-        onPlotGenerated: function(imageData) {
+        function onPlotGenerated(imageData) {
             console.log("Received image data for display.");
             ultrasoundGraph.updateImage("data:image/png;base64," + imageData);
             statusText.text = "Status: Plot updated!";
