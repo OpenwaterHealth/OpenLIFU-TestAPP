@@ -15,12 +15,12 @@ from openlifu.xdc.util import load_transducer_from_file
 
 logger = logging.getLogger("LIFUConnector")
 # Set up logging
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.propagate = False
 
 # Create console handler and set level to debug
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 # Create formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 # Add formatter to ch
@@ -49,6 +49,7 @@ class LIFUConnector(QObject):
 
     # New Signals for data updates
     hvDeviceInfoReceived = pyqtSignal(str, str)  # (firmwareVersion, deviceId)
+    monVoltagesReceived = pyqtSignal(list)  # Signal for voltage monitor readings
     txDeviceInfoReceived = pyqtSignal(int, str, str)  # (firmwareVersion, deviceId)
     temperatureHvUpdated = pyqtSignal(float, float)  # (temp1, temp2)
     temperatureTxUpdated = pyqtSignal(int, float, float)  # (tx_temp, amb_temp)
@@ -787,6 +788,17 @@ class LIFUConnector(QObject):
             self.powerStatusReceived.emit(v12_state, hv_state)
         except Exception as e:
             logger.error(f"Error toggling HV: {e}")
+
+    @pyqtSlot()
+    def getMonitorVoltages(self):
+        """Get voltage monitor readings from console."""
+        try:
+            voltages = self.interface.hvcontroller.get_vmon_values()
+            logger.debug(f"Voltage readings: {voltages}")
+            # Emit the voltage readings to QML
+            self.monVoltagesReceived.emit(voltages)
+        except Exception as e:
+            logger.error(f"Error getting voltages: {e}")
 
     @pyqtSlot()
     def softResetTX(self):

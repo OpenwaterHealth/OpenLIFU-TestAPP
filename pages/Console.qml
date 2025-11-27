@@ -98,6 +98,21 @@ Rectangle {
             v12Status.text = v12State
         }
 
+        // Handle voltage readings updates
+        function onMonVoltagesReceived(voltages) {
+            // voltages is an array of 8 dictionaries with voltage, converted_voltage, etc.
+            if (voltages.length >= 8) {
+                voltage_HVP1.text = voltages[0].converted_voltage.toFixed(2) + " V"
+                voltage_HVP2.text = voltages[1].converted_voltage.toFixed(2) + " V"
+                voltage_HVM2.text = voltages[2].converted_voltage.toFixed(2) + " V"
+                voltage_HVM1.text = voltages[3].converted_voltage.toFixed(2) + " V"
+                voltage_12V.text = voltages[4].converted_voltage.toFixed(2) + " V"
+                voltage_VCA1.text = voltages[5].converted_voltage.toFixed(2) + " V"
+                voltage_VCB1.text = voltages[6].converted_voltage.toFixed(3) + " V"
+                voltage_VCC1.text = voltages[7].converted_voltage.toFixed(1) + " V"
+            }
+        }
+
         function onRgbStateReceived(stateValue, stateText) {
             rgbState = stateText
             rgbLedResult.text = stateText  // Display the state as text
@@ -376,21 +391,54 @@ Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.topMargin: 5  // 5px spacing from the top
                         }
+
+                        // Refresh Voltages Button
+                        Rectangle {
+                            width: 30
+                            height: 30
+                            radius: 15
+                            color: enabled ? "#2C3E50" : "#7F8C8D"
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.topMargin: 5
+                            anchors.rightMargin: 10
+                            enabled: LIFUConnector.hvConnected
+
+                            Text {
+                                text: "\u21BB"  // Unicode refresh icon
+                                anchors.centerIn: parent
+                                font.pixelSize: 18
+                                font.family: iconFont.name
+                                color: parent.enabled ? "white" : "#BDC3C7"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: parent.enabled
+                                onClicked: {
+                                    console.log("Refreshing voltage readings...")
+                                    LIFUConnector.getMonitorVoltages()
+                                }
+
+                                onEntered: if (parent.enabled) parent.color = "#34495E"
+                                onExited: parent.color = parent.enabled ? "#2C3E50" : "#7F8C8D"
+                            }
+                        }
                         
 
-                        // Content for comms tests
+                        // Content for power tests - 3 columns layout
                         GridLayout {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.leftMargin: 20
-                            anchors.topMargin: 60
-                            columns: 5
+                            anchors.topMargin: 40
+                            columns: 3
                             rowSpacing: 10
-                            columnSpacing: 10
+                            columnSpacing: 20
 
-
+                            // Row 1: Set HV
                             Text {
-                                Layout.preferredWidth: 80
+                                Layout.preferredWidth: 100
                                 font.pixelSize: 16
                                 text: "Set HV (+/-)"
                                 color: "#BDC3C7"
@@ -413,116 +461,252 @@ Rectangle {
                                             console.log("Voltage set successfully");
                                         }  else {
                                             console.log("Failed to set voltage. Resetting ComboBox to '-'");
-                                            // Reset the ComboBox to "-"
-                                            hvDropdown.currentIndex = 0; // Index 0 corresponds to "-"
+                                            hvDropdown.currentIndex = 0;
                                         }
                                     }
                                 }
-                            }
-
-                            Item {
-                                Layout.preferredWidth: 200
-                            }
-
-
-                            Button {
-                                id: v12Enable
-                                text: "12V Enable"
-                                Layout.preferredWidth: 80
-                                Layout.preferredHeight: 50
-                                hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected 
-
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-
-                                background: Rectangle {
-                                    id: v12EnableButtonBackground
-                                    color: {
-                                        if (!parent.enabled) {
-                                            return "#3A3F4B";  // Disabled color
-                                        }
-                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
-                                    }
-                                    radius: 4
-                                    border.color: {
-                                        if (!parent.enabled) {
-                                            return "#7F8C8D";  // Disabled border color
-                                        }
-                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
-                                    }
-                                }
-
-                                onClicked: {
-                                    LIFUConnector.toggleV12() // Toggle the HV state
-                                }
-
-                            }
-                            Text {
-                                id: v12Status
-                                Layout.preferredWidth: 80
-                                color: "#BDC3C7"
-                                text: "Off"
-                            }
-
-
-                            Item {
-                            }
-
-                            Item {
-                            }
-
-                            Item {
-                                Layout.preferredWidth: 200
                             }
 
                             Button {
                                 id: hvEnable
                                 text: "HV Enable"
-                                Layout.preferredWidth: 80
-                                Layout.preferredHeight: 50
-                                hoverEnabled: true  // Enable hover detection
-                                enabled: LIFUConnector.hvConnected && hvDropdown.currentText !== "-"  // Enable button only if a valid value is selected
+                                Layout.preferredWidth: 100
+                                Layout.preferredHeight: 40
+                                hoverEnabled: true
+                                enabled: LIFUConnector.hvConnected && hvDropdown.currentText !== "-"
 
                                 contentItem: Text {
                                     text: parent.text
-                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                 }
 
                                 background: Rectangle {
-                                    id: hvEnableButtonBackground
                                     color: {
                                         if (!parent.enabled) {
-                                            return "#3A3F4B";  // Disabled color
+                                            return "#3A3F4B";
                                         }
-                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";
                                     }
                                     radius: 4
                                     border.color: {
                                         if (!parent.enabled) {
-                                            return "#7F8C8D";  // Disabled border color
+                                            return "#7F8C8D";
                                         }
-                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";
                                     }
                                 }
 
                                 onClicked: {
-                                    LIFUConnector.toggleHV() // Toggle the HV state
+                                    LIFUConnector.toggleHV()
                                 }
+                            }
 
+                            // Row 2: HV Status
+                            Text {
+                                Layout.preferredWidth: 100
+                                font.pixelSize: 16
+                                text: "HV Status"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
                             }
 
                             Text {
                                 id: hvStatus
-                                Layout.preferredWidth: 80
+                                Layout.preferredWidth: 120
+                                color: "#4A90E2"
+                                font.pixelSize: 16
+                                text: LIFUConnector.hvState ? "On" : "Off"
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 100
+                            }
+
+                            // Row 3: 12V Enable
+                            Text {
+                                Layout.preferredWidth: 100
+                                font.pixelSize: 16
+                                text: "12V Control"
                                 color: "#BDC3C7"
-                                text: LIFUConnector.hvState ? "On" : "Off" // Bind text to HV state
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 120
+                            }
+
+                            Button {
+                                id: v12Enable
+                                text: "12V Enable"
+                                Layout.preferredWidth: 100
+                                Layout.preferredHeight: 40
+                                hoverEnabled: true
+                                enabled: LIFUConnector.hvConnected 
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";
+                                    }
+                                    radius: 4
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";
+                                    }
+                                }
+
+                                onClicked: {
+                                    LIFUConnector.toggleV12()
+                                }
+                            }
+
+                            // Row 4: 12V Status
+                            Text {
+                                Layout.preferredWidth: 100
+                                font.pixelSize: 16
+                                text: "12V Status"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Text {
+                                id: v12Status
+                                Layout.preferredWidth: 120
+                                color: "#4A90E2"
+                                font.pixelSize: 16
+                                text: "Off"
+                            }
+
+                            Item {
+                                Layout.preferredWidth: 100
+                            }
+                        }
+
+                        // Voltage Readings Grid - positioned on the right side
+                        GridLayout {
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.rightMargin: 20
+                            anchors.topMargin: 40
+                            columns: 2
+                            rowSpacing: 3
+                            columnSpacing: 10
+
+                            // HV+_1
+                            Text {
+                                text: "HV+_1:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_HVP1
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // HV+_2
+                            Text {
+                                text: "HV+_2:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_HVP2
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // HV-_2
+                            Text {
+                                text: "HV-_2:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_HVM2
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // HV-_1
+                            Text {
+                                text: "HV-_1:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_HVM1
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // V_HV_NEG
+                            Text {
+                                text: "12V:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_12V
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // V_VBUS
+                            Text {
+                                text: "VC-A1:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_VCA1
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // V_CURR
+                            Text {
+                                text: "VC-B1:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_VCB1
+                                text: "0.00 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
+                            }
+
+                            // V_TEMP
+                            Text {
+                                text: "VC-C1:"
+                                color: "#BDC3C7"
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                id: voltage_VCC1
+                                text: "0.0 V"
+                                color: "#4A90E2"
+                                font.pixelSize: 11
                             }
                         }
                     }
