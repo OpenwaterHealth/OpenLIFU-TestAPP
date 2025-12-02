@@ -449,19 +449,24 @@ Rectangle {
                                 id: hvDropdown
                                 Layout.preferredWidth: 120
                                 Layout.preferredHeight: 40
-                                model: ["-", "10", "25", "50", "100"]
+                                model: ["0", "5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70"]
                                 enabled: LIFUConnector.hvConnected 
 
                                 onActivated: {
                                     var selectedValue = hvDropdown.currentText;
-
-                                    if (selectedValue !== "-") {
+                                    if (selectedValue !== "0") {
                                         var success = LIFUConnector.setHVCommand(selectedValue);
                                         if (success) {
                                             console.log("Voltage set successfully");
                                         }  else {
-                                            console.log("Failed to set voltage. Resetting ComboBox to '-'");
-                                            hvDropdown.currentIndex = 0;
+                                            console.log("Failed to set voltage. Resetting ComboBox to '0'");
+                                            hvDropdown.currentIndex = 0; // Index 0 corresponds
+                                        }
+                                    }
+                                    else {
+                                        if(LIFUConnector.hvState == "On")
+                                        {
+                                            LIFUConnector.toggleHV()
                                         }
                                     }
                                 }

@@ -26,3 +26,8 @@ Python example UI for OPEN LIFU used for Hardware Testing and Basic Usage
    ```bash
    python main.py
    ```
+
+## Run packager
+```
+python -m PyInstaller -y openwater.spec
+```
