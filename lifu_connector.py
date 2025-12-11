@@ -117,8 +117,8 @@ class LIFUConnector(QObject):
         }
 
         try:
-            # Match top-level fields
-            pattern = re.compile(
+            # Try pattern WITH PULSE field
+            pattern_with_pulse = re.compile(
                 r"STATUS:(\w+),"
                 r"MODE:(\w+),"
                 r"PULSE_TRAIN:\[(\d+)/(\d+)\],"
@@ -126,32 +126,63 @@ class LIFUConnector(QObject):
                 r"TEMP_TX:([0-9.]+),"
                 r"TEMP_AMBIENT:([0-9.]+)"
             )
-            match = pattern.match(status_str.strip())
+            match = pattern_with_pulse.match(status_str.strip())
 
-            if not match:
-                raise ValueError("Input string format is invalid.")
+            if match:
+                (
+                    status,
+                    mode,
+                    pt_current, pt_total,
+                    p_current, p_total,
+                    temp_tx,
+                    temp_ambient
+                ) = match.groups()
 
-            (
-                status,
-                mode,
-                pt_current, pt_total,
-                p_current, p_total,
-                temp_tx,
-                temp_ambient
-            ) = match.groups()
+                # Convert and compute percentages
+                pt_current = int(pt_current)
+                pt_total = int(pt_total)
+                p_current = int(p_current)
+                p_total = int(p_total)
 
-            # Convert and compute percentages
-            pt_current = int(pt_current)
-            pt_total = int(pt_total)
-            p_current = int(p_current)
-            p_total = int(p_total)
+                result["status"] = status
+                result["mode"] = mode
+                result["pulse_train_percent"] = (pt_current / pt_total * 100) if pt_total > 0 else 0
+                result["pulse_percent"] = (p_current / p_total * 100) if p_total > 0 else 0
+                result["temp_tx"] = float(temp_tx)
+                result["temp_ambient"] = float(temp_ambient)
 
-            result["status"] = status
-            result["mode"] = mode
-            result["pulse_train_percent"] = (pt_current / pt_total * 100) if pt_total > 0 else 0
-            result["pulse_percent"] = (p_current / p_total * 100) if p_total > 0 else 0
-            result["temp_tx"] = float(temp_tx)
-            result["temp_ambient"] = float(temp_ambient)
+            else:
+                # Try pattern WITHOUT PULSE field
+                pattern_without_pulse = re.compile(
+                    r"STATUS:(\w+),"
+                    r"MODE:(\w+),"
+                    r"PULSE_TRAIN:\[(\d+)/(\d+)\],"
+                    r"TEMP_TX:([0-9.]+),"
+                    r"TEMP_AMBIENT:([0-9.]+)"
+                )
+                match = pattern_without_pulse.match(status_str.strip())
+
+                if not match:
+                    raise ValueError("Input string format is invalid.")
+
+                (
+                    status,
+                    mode,
+                    pt_current, pt_total,
+                    temp_tx,
+                    temp_ambient
+                ) = match.groups()
+
+                # Convert and compute percentages
+                pt_current = int(pt_current)
+                pt_total = int(pt_total)
+
+                result["status"] = status
+                result["mode"] = mode
+                result["pulse_train_percent"] = (pt_current / pt_total * 100) if pt_total > 0 else 0
+                result["pulse_percent"] = None  # No pulse data available
+                result["temp_tx"] = float(temp_tx)
+                result["temp_ambient"] = float(temp_ambient)
 
             return result
 
@@ -209,7 +240,14 @@ class LIFUConnector(QObject):
             try:
                 parsed = self.parse_status_string(message)
                 if parsed["status"] in {"RUNNING", "STOPPED"}:
-                    # Update internal trigger state and notify QML
+                    # Update internal trigger state based on parsed status
+                    new_trigger_state = parsed["status"] == "RUNNING"
+                    
+                    if new_trigger_state != self._trigger_state:
+                        self._trigger_state = new_trigger_state
+                        self.triggerStateChanged.emit(self._trigger_state)
+                        logger.info(f"Trigger state updated to: {'RUNNING' if self._trigger_state else 'STOPPED'}")
+                    
                     if parsed["status"] == "STOPPED":
                         logger.info("Trigger is stopped.")
                         self._state = READY
@@ -656,6 +694,7 @@ class LIFUConnector(QObject):
         try:
             if self._trigger_state:
                 # Stop the trigger
+                self.interface.txdevice.async_mode(False)
                 success = self.interface.txdevice.stop_trigger()
                 if success:
                     logger.info("Trigger stopped successfully.")
@@ -664,6 +703,7 @@ class LIFUConnector(QObject):
                     logger.error("Failed to stop trigger.")
             else:
                 # Start the trigger
+                self.interface.txdevice.async_mode(True)
                 success = self.interface.txdevice.start_trigger()
                 if success:
                     logger.info("Trigger started successfully.")

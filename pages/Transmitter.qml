@@ -381,150 +381,258 @@ Rectangle {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             anchors.leftMargin: 20
-                            anchors.topMargin: 60
-                            columns: 5
-                            rowSpacing: 10
-                            columnSpacing: 10
+                            anchors.topMargin: 45
+                            columns: 4
+                            rowSpacing: 5
+                            columnSpacing: 15
 
+                            // Row 1: Frequency & Pulse Count
                             Text {
-                                Layout.preferredWidth: 100
-                                font.pixelSize: 16
-                                text: "Trigger Pulse"
+                                font.pixelSize: 13
+                                text: "Frequency (Hz):"
                                 color: "#BDC3C7"
                                 Layout.alignment: Qt.AlignVCenter
                             }
+                            TextField {
+                                id: triggerFrequency
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                text: "10"
+                                enabled: LIFUConnector.txConnected
+                                color: "#BDC3C7"
+                                font.pixelSize: 12
+                                background: Rectangle {
+                                    color: parent.enabled ? "#2C3E50" : "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
+                            Text {
+                                font.pixelSize: 13
+                                text: "Pulse Count:"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            TextField {
+                                id: triggerPulseCount
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                text: "5"
+                                enabled: LIFUConnector.txConnected
+                                color: "#BDC3C7"
+                                font.pixelSize: 12
+                                background: Rectangle {
+                                    color: parent.enabled ? "#2C3E50" : "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
 
+                            // Row 2: Pulse Width & Train Interval
+                            Text {
+                                font.pixelSize: 13
+                                text: "Pulse Width (µs):"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            TextField {
+                                id: triggerPulseWidth
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                text: "20"
+                                enabled: LIFUConnector.txConnected
+                                color: "#BDC3C7"
+                                font.pixelSize: 12
+                                background: Rectangle {
+                                    color: parent.enabled ? "#2C3E50" : "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
+                            Text {
+                                font.pixelSize: 13
+                                text: "Train Interval:"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            TextField {
+                                id: triggerTrainInterval
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                text: "1000000"
+                                enabled: LIFUConnector.txConnected
+                                color: "#BDC3C7"
+                                font.pixelSize: 12
+                                background: Rectangle {
+                                    color: parent.enabled ? "#2C3E50" : "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
+
+                            // Row 3: Trigger Mode & Train Count
+                            Text {
+                                font.pixelSize: 13
+                                text: "Trigger Mode:"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
                             ComboBox {
-                                id: triggerDropdown
-                                Layout.preferredWidth: 200
-                                Layout.preferredHeight: 40
-                                model: ["10Hz 20ms Pulse", "20Hz 10ms Pulse", "40Hz 5ms Pulse"]
+                                id: triggerModeDropdown
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 30
+                                model: ["Sequence", "Continuous", "Single"]
+                                currentIndex: 1  // Default to Continuous
+                                enabled: LIFUConnector.txConnected
+                                font.pixelSize: 11
+                            }
+                            Text {
+                                font.pixelSize: 13
+                                text: "Train Count:"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            TextField {
+                                id: triggerTrainCount
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                text: "5"
+                                enabled: LIFUConnector.txConnected
+                                color: "#BDC3C7"
+                                font.pixelSize: 12
+                                background: Rectangle {
+                                    color: parent.enabled ? "#2C3E50" : "#3A3F4B"
+                                    radius: 4
+                                    border.color: "#BDC3C7"
+                                }
+                            }
+
+                            // Row 4: Set Trigger Button & Toggle Trigger Button
+                            Item { }
+                            Button {
+                                id: setTriggerButton
+                                text: "Set Trigger"
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                hoverEnabled: true
                                 enabled: LIFUConnector.txConnected
 
-                                onActivated: {
-                                    var selectedIndex = triggerDropdown.currentIndex;
+                                contentItem: Text {
+                                    text: parent.text
+                                    font.pixelSize: 11
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
 
-                                    // Define the JSON object
+                                background: Rectangle {
+                                    color: {
+                                        if (!parent.enabled) return "#3A3F4B"
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B"
+                                    }
+                                    radius: 4
+                                    border.color: {
+                                        if (!parent.enabled) return "#7F8C8D"
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7"
+                                    }
+                                }
+
+                                onClicked: {
                                     var json_trigger_data = {
-                                        "TriggerFrequencyHz": 0, // Will be updated based on the index
-                                        "TriggerPulseCount": 0,
-                                        "TriggerPulseWidthUsec": 0, // Will be updated based on the index
-                                        "TriggerPulseTrainInterval": 0,
-                                        "TriggerPulseTrainCount": 0,
-                                        "TriggerMode": 1,
+                                        "TriggerFrequencyHz": parseInt(triggerFrequency.text),
+                                        "TriggerPulseCount": parseInt(triggerPulseCount.text),
+                                        "TriggerPulseWidthUsec": parseInt(triggerPulseWidth.text),
+                                        "TriggerPulseTrainInterval": parseInt(triggerTrainInterval.text),
+                                        "TriggerPulseTrainCount": parseInt(triggerTrainCount.text),
+                                        "TriggerMode": triggerModeDropdown.currentIndex,
                                         "ProfileIndex": 0,
                                         "ProfileIncrement": 0
                                     };
 
-                                    // Update frequency and pulse width based on the selected index
-                                    switch (selectedIndex) {
-                                        case 0: // 10Hz 20ms Pulse
-                                            json_trigger_data.TriggerFrequencyHz = 10;
-                                            json_trigger_data.TriggerPulseWidthUsec = 20000;
-                                            break;
-                                        case 1: // 20Hz 10ms Pulse
-                                            json_trigger_data.TriggerFrequencyHz = 20;
-                                            json_trigger_data.TriggerPulseWidthUsec = 10000;
-                                            break;
-                                        case 2: // 40Hz 5ms Pulse
-                                            json_trigger_data.TriggerFrequencyHz = 40;
-                                            json_trigger_data.TriggerPulseWidthUsec = 5000;
-                                            break;
-                                        default:
-                                            console.log("Invalid selection");
-                                            return;
-                                    }
-
-                                    // Convert the object to a JSON string
                                     var jsonString = JSON.stringify(json_trigger_data);
-
-                                    // Call your function with the selected index
                                     var success = LIFUConnector.setTrigger(jsonString);
                                     if (success) {
-                                        console.log("JSON data sent successfully");
+                                        console.log("Trigger configured:", jsonString);
                                     } else {
-                                        console.log("Failed to send JSON data");
+                                        console.log("Failed to set trigger configuration");
                                     }
+                                }
+                            }
+                            Item { }
+                            Button {
+                                id: triggerEnable
+                                text: "Toggle Trigger"
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                hoverEnabled: true
+                                enabled: LIFUConnector.txConnected
 
+                                contentItem: Text {
+                                    text: parent.text
+                                    font.pixelSize: 11
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    color: {
+                                        if (!parent.enabled) return "#3A3F4B"
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B"
+                                    }
+                                    radius: 4
+                                    border.color: {
+                                        if (!parent.enabled) return "#7F8C8D"
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7"
+                                    }
+                                }
+
+                                onClicked: {
+                                    var success = LIFUConnector.toggleTrigger();
+                                    if (success) {
+                                        console.log("Trigger toggled successfully.");
+                                    } else {
+                                        console.log("Failed to toggle trigger.");
+                                    }
                                 }
                             }
 
-                            Item {
-                                Layout.preferredWidth: 120
+                            // Row 5: Trigger Status
+                            Text {
+                                font.pixelSize: 13
+                                text: "Trigger Status:"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
                             }
-
-                            Item {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 50
-
-                                Button {
-                                    id: triggerEnable
-                                    text: "Toggle Trigger"
-                                    anchors.right: parent.left
-                                    Layout.preferredWidth: 80
-                                    Layout.preferredHeight: 50
-                                    Layout.alignment: Qt.AlignRight
-                                    hoverEnabled: true  // Enable hover detection
-                                    enabled: LIFUConnector.txConnected
-
-                                    contentItem: Text {
-                                        text: parent.text
-                                        color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
-                                    }
-
-                                    background: Rectangle {
-                                        id: triggerButtonBackground
-                                        color: {
-                                            if (!parent.enabled) {
-                                                return "#3A3F4B";  // Disabled color
-                                            }
-                                            return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
-                                        }
-                                        radius: 4
-                                        border.color: {
-                                            if (!parent.enabled) {
-                                                return "#7F8C8D";  // Disabled border color
-                                            }
-                                            return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
-                                        }
-                                    }
-
-                                    onClicked: {
-                                        // Toggle the trigger state
-                                        var success = LIFUConnector.toggleTrigger();
-                                        if (success) {
-                                            console.log("Trigger toggled successfully.");
-                                        } else {
-                                            console.log("Failed to toggle trigger.");
-                                        }
-                                    }
-
-                                }
-                            }
-
                             Text {
                                 id: triggerStatus
-                                Layout.preferredWidth: 80
                                 text: ""
                                 color: "#BDC3C7"
+                                font.pixelSize: 13
+                                Layout.columnSpan: 3
                             }
                             
+                            // Spacer row
+                            Item {
+                                Layout.columnSpan: 4
+                                Layout.preferredHeight: 10
+                            }
+                            
+                            // Row 6: TX Config
                             Text {
-                                Layout.preferredWidth: 100
-                                font.pixelSize: 16
-                                text: "TX Config"
+                                font.pixelSize: 13
+                                text: "TX Config:"
                                 color: "#BDC3C7"
                                 Layout.alignment: Qt.AlignVCenter
                             }
 
                             ComboBox {
                                 id: txconfigDropdown
-                                Layout.preferredWidth: 200
-                                Layout.preferredHeight: 40
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 30
                                 model: ["100KHz", "200KHz", "400KHz"]
                                 enabled: LIFUConnector.txConnected
+                                font.pixelSize: 11
 
                                 onActivated: {
                                     if(LIFUConnector.triggerEnabled){
@@ -534,93 +642,93 @@ Rectangle {
                                 }
                             }
 
-                            Item {
-                                Layout.preferredWidth: 100
-                            }
+                            Item { }
 
-                            Item {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 50
-                            
-                                Button {
-                                    id: setTxConfig
-                                    text: "Set TX Config"
-                                    anchors.right: parent.right
-                                    Layout.preferredWidth: 80
-                                    Layout.preferredHeight: 50
-                                    hoverEnabled: true  // Enable hover detection
-                                    enabled: LIFUConnector.txConnected 
+                            Button {
+                                id: setTxConfig
+                                text: "Set TX Config"
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 30
+                                hoverEnabled: true
+                                enabled: LIFUConnector.txConnected 
 
-                                    contentItem: Text {
-                                        text: parent.text
-                                        color: parent.enabled ? "#BDC3C7" : "#7F8C8D"  // Gray out text when disabled
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
+                                contentItem: Text {
+                                    text: parent.text
+                                    font.pixelSize: 11
+                                    color: parent.enabled ? "#BDC3C7" : "#7F8C8D"
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    id: setTxConfigBackground
+                                    color: {
+                                        if (!parent.enabled) {
+                                            return "#3A3F4B";  // Disabled color
+                                        }
+                                        return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
+                                    }
+                                    radius: 4
+                                    border.color: {
+                                        if (!parent.enabled) {
+                                            return "#7F8C8D";  // Disabled border color
+                                        }
+                                        return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
+                                    }
+                                }
+
+                                onClicked: {
+                                    // Set configuration of transmitter
+                                    
+                                    if(LIFUConnector.triggerEnabled){
+                                        LIFUConnector.toggleTrigger();
+                                    }
+                                    txconfigStatus.text = ""
+                                    var selectedIndex = txconfigDropdown.currentIndex;
+                                    let frequency = 400000
+                                    let pulse_count = 5
+                                    let durationMS = 2e-5
+
+                                    // Update frequency and pulse width based on the selected index
+                                    switch (selectedIndex) {
+                                        case 0: // 100KHz 
+                                            frequency = 100000
+                                            pulse_count = 4
+                                            durationMS = 2e-5
+                                            break;
+                                        case 1: // 200KHz 
+                                            frequency = 200000
+                                            pulse_count = 8
+                                            durationMS = 2e-5
+                                            break;
+                                        case 2: // 400KHz 
+                                            frequency = 400000
+                                            pulse_count = 10
+                                            durationMS = 2e-5
+                                            break;
+                                        default:
+                                            console.log("Invalid selection");
+                                            return;
                                     }
 
-                                    background: Rectangle {
-                                        id: setTxConfigBackground
-                                        color: {
-                                            if (!parent.enabled) {
-                                                return "#3A3F4B";  // Disabled color
-                                            }
-                                            return parent.hovered ? "#4A90E2" : "#3A3F4B";  // Blue on hover, default otherwise
-                                        }
-                                        radius: 4
-                                        border.color: {
-                                            if (!parent.enabled) {
-                                                return "#7F8C8D";  // Disabled border color
-                                            }
-                                            return parent.hovered ? "#FFFFFF" : "#BDC3C7";  // White border on hover, default otherwise
-                                        }
-                                    }
-
-                                    onClicked: {
-                                        // Set configuration of transmitter
-                                        
-                                        if(LIFUConnector.triggerEnabled){
-                                            LIFUConnector.toggleTrigger();
-                                        }
-                                        txconfigStatus.text = ""
-                                        var selectedIndex = txconfigDropdown.currentIndex;
-                                        let frequency = 400000
-                                        let pulse_count = 5
-                                        let durationMS = 2e-5
-
-                                        // Update frequency and pulse width based on the selected index
-                                        switch (selectedIndex) {
-                                            case 0: // 100KHz 
-                                                frequency = 100000
-                                                pulse_count = 4
-                                                durationMS = 2e-5
-                                                break;
-                                            case 1: // 200KHz 
-                                                frequency = 200000
-                                                pulse_count = 8
-                                                durationMS = 2e-5
-                                                break;
-                                            case 2: // 400KHz 
-                                                frequency = 400000
-                                                pulse_count = 10
-                                                durationMS = 2e-5
-                                                break;
-                                            default:
-                                                console.log("Invalid selection");
-                                                return;
-                                        }
-
-                                        // Call your function with the selected index
-                                        LIFUConnector.configure_transmitter(0,0,25,frequency,12.0,5.0,1.0,0,1,durationMS,"continuous");
-                                    }
-
+                                    // Call your function with the selected index
+                                    LIFUConnector.configure_transmitter(0,0,25,frequency,12.0,5.0,1.0,0,1,durationMS,"continuous");
                                 }
                             }
 
+                            // Row 7: TX Config Status
+                            Text {
+                                font.pixelSize: 13
+                                text: "TX Config Status:"
+                                color: "#BDC3C7"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
                             Text {
                                 id: txconfigStatus
-                                Layout.preferredWidth: 80
                                 text: ""
                                 color: "#BDC3C7"
+                                font.pixelSize: 13
+                                Layout.columnSpan: 3
                             }
                         }
 
